@@ -60,6 +60,43 @@ func ChromaCSS(chromaStyle string) (string, error) {
 	return buf.String(), nil
 }
 
+// ChromaCSSBoth returns CSS for both light and dark themes, wrapped
+// in [data-theme] selectors so the toggle works for code highlighting.
+func ChromaCSSBoth() (string, error) {
+	lightCSS, err := ChromaCSS("github")
+	if err != nil {
+		return "", err
+	}
+	darkCSS, err := ChromaCSS("dracula")
+	if err != nil {
+		return "", err
+	}
+
+	var buf strings.Builder
+
+	// Light theme is the default
+	buf.WriteString(lightCSS)
+
+	// Dark theme: prefix each .chroma rule with [data-theme="dark"]
+	buf.WriteString("\n")
+	darkLines := strings.Split(darkCSS, "\n")
+	for _, line := range darkLines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+		// Lines that contain .chroma selectors need the dark prefix
+		// Chroma outputs lines like: /* Comment */ .chroma .k { color: #ff79c6 }
+		if strings.Contains(trimmed, ".chroma") || strings.Contains(trimmed, ".bg") {
+			buf.WriteString("[data-theme=\"dark\"] ")
+		}
+		buf.WriteString(line)
+		buf.WriteString("\n")
+	}
+
+	return buf.String(), nil
+}
+
 // Options for rendering.
 type Options struct {
 	// NoReload disables SSE live reload injection.
@@ -338,11 +375,9 @@ func Render(filePath string, opts Options) (string, error) {
 
 	fm, body, hasFM := extractFrontmatter(data)
 
-	// Choose chroma style based on theme
+	// Always use "github" style for goldmark highlighting — both light and dark
+	// chroma CSS are included in the page so the toggle works
 	chromaStyle := "github"
-	if opts.Dark {
-		chromaStyle = "dracula"
-	}
 
 	md := goldmark.New(
 		goldmark.WithExtensions(
@@ -365,7 +400,7 @@ func Render(filePath string, opts Options) (string, error) {
 		return "", fmt.Errorf("cannot convert markdown: %w", err)
 	}
 
-	chromaCSS, err := ChromaCSS(chromaStyle)
+	chromaCSS, err := ChromaCSSBoth()
 	if err != nil {
 		return "", err
 	}

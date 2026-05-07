@@ -52,31 +52,6 @@
     background-color: #21262d;
 }
 
-/* Chroma dark overrides — for inline code in dark mode */
-[data-theme="dark"] .chroma .c { color: #8b949e; }  /* Comment */
-[data-theme="dark"] .chroma .err { color: #f85149; }  /* Error */
-[data-theme="dark"] .chroma .k { color: #ff7b72; }  /* Keyword */
-[data-theme="dark"] .chroma .n { color: #c9d1d9; }  /* Name */
-[data-theme="dark"] .chroma .o { color: #ff7b72; }  /* Operator */
-[data-theme="dark"] .chroma .p { color: #c9d1d9; }  /* Punctuation */
-[data-theme="dark"] .chroma .s { color: #a5d6ff; }  /* String */
-[data-theme="dark"] .chroma .s2 { color: #a5d6ff; }  /* String */
-[data-theme="dark"] .chroma .nf { color: #d2a8ff; }  /* NameFunction */
-[data-theme="dark"] .chroma .nc { color: #ffa657; }  /* NameClass */
-[data-theme="dark"] .chroma .nt { color: #7ee787; }  /* NameTag */
-[data-theme="dark"] .chroma .nv { color: #ffa657; }  /* NameVariable */
-[data-theme="dark"] .chroma .nb { color: #ffa657; }  /* NameBuiltin */
-[data-theme="dark"] .chroma .mi { color: #79c0ff; }  /* NumberInteger */
-[data-theme="dark"] .chroma .mf { color: #79c0ff; }  /* NumberFloat */
-[data-theme="dark"] .chroma .kd { color: #ff7b72; }  /* KeywordDeclaration */
-[data-theme="dark"] .chroma .kt { color: #ff7b72; }  /* KeywordType */
-[data-theme="dark"] .chroma .cp { color: #8b949e; }  /* CommentPreproc */
-[data-theme="dark"] .chroma .c1 { color: #8b949e; }  /* CommentSingle */
-[data-theme="dark"] .chroma .cs { color: #8b949e; }  /* CommentSpecial */
-[data-theme="dark"] .chroma .cm { color: #8b949e; }  /* CommentMultiline */
-[data-theme="dark"] .chroma .gd { color: #ffa198; background: rgba(248,81,73,0.1); }  /* GenericDeleted */
-[data-theme="dark"] .chroma .gi { color: #56d364; background: rgba(63,185,80,0.1); }  /* GenericInserted */
-
 /* Mermaid diagrams in dark mode */
 [data-theme="dark"] .mermaid {
     color: #c9d1d9;
