@@ -20,3 +20,8 @@ Implemented full md-view Go binary with Glazed CLI, goldmark renderer, HTTP+sock
 - /home/manuel/code/wesen/2026-05-07--md-server/pkg/renderer/renderer.go — Markdown rendering with goldmark + chroma
 - /home/manuel/code/wesen/2026-05-07--md-server/pkg/server/server.go — HTTP + Unix socket server
 
+
+## 2026-05-07
+
+Added frontmatter key-value table, page title from frontmatter, styled error pages, --new-window browser launch, unit tests, Makefile
+

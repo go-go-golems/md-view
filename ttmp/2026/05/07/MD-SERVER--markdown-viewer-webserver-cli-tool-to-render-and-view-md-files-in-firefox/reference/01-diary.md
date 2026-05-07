@@ -188,3 +188,86 @@ Go gives us a single binary with fast startup. Glazed gives us structured output
 - Key deps: goldmark v1.8.2, chroma/v2 v2.16.0, fsnotify v1.10.1, glazed v1.2.7
 - Browser detection: checks `$BROWSER`, then tries `xdg-open`, `firefox`, `google-chrome`, `chromium`
 - Chroma style: "github" (light theme matching the CSS)
+
+---
+
+## Step 3: Polish — Frontmatter Formatting, Error Pages, Browser Window, Tests
+
+Added UX polish: frontmatter as key-value table, page title from frontmatter Title field, styled error pages, --new-window browser launch, and unit tests.
+
+### Prompt Context
+
+**User prompt (verbatim):** (see Step 2) — continued working on polish items
+
+**Assistant interpretation:** Continue improving the tool based on the design guide's Step 8 (polish & edge cases).
+
+**Inferred user intent:** Make the viewer feel professional and handle edge cases well.
+
+**Commit (code):** `002c5e3` — frontmatter as collapsible details
+**Commit (code):** `38da3a9` — --new-window browser launch
+**Commit (code):** `bad68fd` — frontmatter key-value table, error pages, tests
+
+### What I did
+
+- Stripped YAML frontmatter from rendered body, displayed as collapsible `<details>` element
+- Upgraded frontmatter display from raw YAML to formatted key-value table (Title, Ticket, Status, etc. as separate rows)
+- Used frontmatter `Title` field as the page `<title>` when available (falls back to filename)
+- Changed browser launch from `--new-tab` to `--new-window` for i3 floating window support
+- Added styled HTML error pages (400, 404, 500) with large status code, heading, and contextual message
+- Added favicon.ico handler (204 No Content)
+- Added `md-view:` prefix to all page titles for i3 window matching
+- Added Makefile with build/test/lint/dev/install targets
+- Added unit tests: renderer (frontmatter extraction, rendering, frontmatter title), daemon (StateDir, IsAlive), protocol (Command, Response)
+
+### Why
+
+The frontmatter was rendering as an ugly blob. Error pages were plain text. Browser opened in a tab instead of a window. These are all quality-of-life improvements for daily use.
+
+### What worked
+
+- Frontmatter parsing with simple YAML key-value extraction is sufficient for docmgr frontmatter
+- The key-value table display is much more readable than raw YAML
+- `--new-window` for Firefox works perfectly with i3 floating rules
+- Live reload verified working (edited file, browser auto-refreshed within 2 seconds)
+
+### What didn't work
+
+- Initial frontmatter display was raw YAML — too noisy, too tall
+- `--new-tab` opened in existing Firefox window, couldn't be floated in i3
+- Page title was always the filename, ignoring the human-readable Title in frontmatter
+
+### What I learned
+
+- Simple YAML parsing (colon-delimited key: value at top level only) is enough for docmgr frontmatter — no need for a full YAML parser dependency
+- Firefox `--new-window` flag creates a separate window that i3 can manage independently
+- `html.EscapeString` isn't in the stdlib — wrote a simple `htmlEscape` helper
+
+### What was tricky to build
+
+- Frontmatter nested values (lists like `Topics:`, maps like `RelatedFiles:`) — solved by collecting indented lines as the value when the top-level value is empty
+- Making the page title come from frontmatter without overriding explicit `--title` flags — solved by leaving `opts.Title` empty and letting the renderer fall through frontmatter → filename
+
+### What warrants a second pair of eyes
+
+- The YAML parser is very simple — won't handle complex nesting or multi-line scalars beyond `key:\n  - item`
+- The SSE `CloseNotify` deprecation warning in newer Go — may need updating
+
+### What should be done in the future
+
+- Add golangci-lint config
+- Add GitHub Actions CI
+- Consider adding a dark theme toggle
+- Add `--title` flag to the view command for custom titles
+
+### Code review instructions
+
+- `pkg/renderer/renderer.go` — frontmatter extraction and formatting, title from frontmatter
+- `pkg/server/server.go` — styled error pages, --new-window
+- `pkg/renderer/renderer_test.go` — frontmatter and rendering tests
+- `Makefile` — build targets
+
+### Technical details
+
+- Frontmatter keys rendered as `<span class="md-view-fm-key">`, values as `<span class="md-view-fm-value">`
+- Error pages use inline CSS (not embedded base.css) for simplicity
+- i3 rule: `for_window [title="^md-view:.*"] floating enable`
