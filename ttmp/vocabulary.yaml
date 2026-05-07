@@ -5,6 +5,14 @@ topics:
       description: Backend services
     - slug: websocket
       description: WebSocket lifecycle & events
+    - slug: cli
+      description: Command-line interface tools
+    - slug: markdown
+      description: Markdown rendering and processing
+    - slug: web
+      description: Web server and HTTP serving
+    - slug: unix-socket
+      description: Unix domain socket IPC
 docTypes:
     - slug: design-doc
       description: Structured rationale and architecture notes
@@ -16,6 +24,8 @@ docTypes:
       description: Ticket landing page
     - slug: skill
       description: Skill documentation (what it's for and when to use it)
+    - slug: design-impl-guide
+      description: Combined design document and implementation guide
 intent:
     - slug: long-term
       description: Likely to persist

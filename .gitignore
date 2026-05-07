@@ -1,0 +1,16 @@
+# Binaries
+/md-view
+*.exe
+
+# State files
+*.pid
+*.sock
+*.port
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
