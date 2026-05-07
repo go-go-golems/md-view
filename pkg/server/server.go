@@ -190,6 +190,9 @@ func (s *Server) handleSocketConn(_ context.Context, conn net.Conn) {
 	switch cmd.Command {
 	case "view":
 		url := fmt.Sprintf("http://localhost:%d/render?file=%s", s.port, urlEncodePath(cmd.Path))
+		if cmd.Dark {
+			url += "&theme=dark"
+		}
 		resp := protocol.Response{Status: "ok", URL: url}
 		data, _ := json.Marshal(resp)
 		conn.Write(append(data, '\n'))
@@ -267,10 +270,14 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check for theme parameter
+	dark := r.URL.Query().Get("theme") == "dark"
+
 	opts := renderer.Options{
 		File:     absPath,
 		Port:     s.port,
 		NoReload: s.noReload,
+		Dark:     dark,
 	}
 
 	html, err := renderer.Render(absPath, opts)

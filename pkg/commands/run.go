@@ -49,6 +49,7 @@ func RunView(ctx context.Context, s *ViewSettings) (string, error) {
 	cmd := protocol.Command{
 		Command: "view",
 		Path:    absPath,
+		Dark:    s.Dark,
 	}
 
 	resp, err := protocol.SendCommand(socketPath, cmd)

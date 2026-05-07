@@ -11,7 +11,8 @@ import (
 // Command represents a client → server message.
 type Command struct {
 	Command string `json:"command"`
-	Path   string `json:"path,omitempty"`
+	Path    string `json:"path,omitempty"`
+	Dark    bool   `json:"dark,omitempty"`
 }
 
 // Response represents a server → client message.

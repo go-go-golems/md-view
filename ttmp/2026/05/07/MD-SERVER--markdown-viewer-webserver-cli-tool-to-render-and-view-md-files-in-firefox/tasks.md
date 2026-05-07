@@ -12,3 +12,5 @@
 - [x] Step 5: Daemonization (double-fork, PID file, graceful shutdown)
 - [x] Step 3: HTTP server (routes, localhost bind, random port)
 - [x] Step 7: Live reload via SSE (watcher.py, /events route, reload.js)
+- [ ] Mermaid diagram support (client-side mermaid.js rendering)
+- [ ] Dark theme (CSS + chroma dark style + toggle)

@@ -22,6 +22,7 @@ type ViewSettings struct {
 	NoReload bool  `glazed:"no-reload"`
 	Browser  string `glazed:"browser"`
 	Port     int    `glazed:"port"`
+	Dark     bool   `glazed:"dark"`
 }
 
 func NewViewCommand() (*ViewCommand, error) {
@@ -47,6 +48,7 @@ Examples:
   md-view view ./README.md
   md-view view --no-reload ./notes.md
   md-view view --browser firefox ./doc.md
+  md-view view --dark ./doc.md
 `),
 		cmds.WithArguments(
 			fields.New(
@@ -74,6 +76,12 @@ Examples:
 				fields.TypeInteger,
 				fields.WithDefault(0),
 				fields.WithHelp("HTTP port for the daemon (0 = random available)"),
+			),
+			fields.New(
+				"dark",
+				fields.TypeBool,
+				fields.WithDefault(false),
+				fields.WithHelp("Use dark theme"),
 			),
 		),
 		cmds.WithSections(glazedSection, commandSettingsSection),

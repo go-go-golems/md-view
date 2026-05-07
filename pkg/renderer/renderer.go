@@ -1,3 +1,4 @@
+// Package renderer converts Markdown files to styled HTML pages.
 package renderer
 
 import (
@@ -20,12 +21,23 @@ import (
 //go:embed static/base.css
 var defaultCSS []byte
 
+//go:embed static/dark.css
+var darkCSS []byte
+
 //go:embed static/reload.js
 var reloadJS []byte
 
-// CSS returns the embedded GitHub-flavored CSS.
+//go:embed static/mermaid-init.js
+var mermaidInitJS []byte
+
+// CSS returns the embedded GitHub-flavored CSS (light theme).
 func CSS() []byte {
 	return defaultCSS
+}
+
+// DarkCSS returns the embedded dark theme CSS.
+func DarkCSS() []byte {
+	return darkCSS
 }
 
 // ReloadJS returns the embedded live-reload script.
@@ -33,10 +45,11 @@ func ReloadJS() []byte {
 	return reloadJS
 }
 
-// ChromaCSS returns the CSS for syntax highlighting (chroma/github style).
-func ChromaCSS() (string, error) {
+// ChromaCSS returns the CSS for syntax highlighting.
+// chromaStyle is the Chroma style name (e.g. "github" for light, "dracula" for dark).
+func ChromaCSS(chromaStyle string) (string, error) {
 	formatter := chroma_html.New(chroma_html.WithClasses(true))
-	style := styles.Get("github")
+	style := styles.Get(chromaStyle)
 	if style == nil {
 		style = styles.Fallback
 	}
@@ -57,6 +70,8 @@ type Options struct {
 	Title string
 	// Port is the HTTP port (used for SSE endpoint URL).
 	Port int
+	// Dark enables the dark theme.
+	Dark bool
 }
 
 // frontmatterData holds parsed YAML frontmatter key-value pairs.
@@ -71,7 +86,6 @@ type fmEntry struct {
 }
 
 // extractFrontmatter splits input into YAML frontmatter and body.
-// Returns (frontmatterData, body, hasFrontmatter).
 func extractFrontmatter(data []byte) (*frontmatterData, []byte, bool) {
 	content := string(data)
 	if !strings.HasPrefix(content, "---\n") && !strings.HasPrefix(content, "---\r\n") {
@@ -93,7 +107,6 @@ func extractFrontmatter(data []byte) (*frontmatterData, []byte, bool) {
 }
 
 // parseFrontmatter parses simple YAML key: value pairs from frontmatter.
-// Handles nested structures (lists, maps) by detecting indentation.
 func parseFrontmatter(raw string) *frontmatterData {
 	data := &frontmatterData{}
 	lines := strings.Split(raw, "\n")
@@ -102,13 +115,11 @@ func parseFrontmatter(raw string) *frontmatterData {
 	for i < len(lines) {
 		line := lines[i]
 
-		// Skip blank lines
 		if strings.TrimSpace(line) == "" {
 			i++
 			continue
 		}
 
-		// Top-level key: value
 		if !strings.HasPrefix(line, " ") && !strings.HasPrefix(line, "\t") {
 			colonIdx := strings.Index(line, ":")
 			if colonIdx == -1 {
@@ -119,9 +130,7 @@ func parseFrontmatter(raw string) *frontmatterData {
 			key := strings.TrimSpace(line[:colonIdx])
 			value := strings.TrimSpace(line[colonIdx+1:])
 
-			// If value is empty, collect nested content
 			if value == "" {
-				// Collect all indented lines below as the value
 				var nested []string
 				i++
 				for i < len(lines) && (strings.HasPrefix(lines[i], "  ") || strings.HasPrefix(lines[i], "\t") || strings.TrimSpace(lines[i]) == "") {
@@ -130,12 +139,10 @@ func parseFrontmatter(raw string) *frontmatterData {
 				}
 				value = strings.Join(nested, "\n")
 			} else {
-				// Strip surrounding quotes
 				value = stripQuotes(value)
 				i++
 			}
 
-			// Track title
 			if strings.EqualFold(key, "Title") && data.Title == "" {
 				data.Title = stripQuotes(value)
 			}
@@ -155,15 +162,13 @@ func stripQuotes(s string) string {
 	if m := reQuoted.FindStringSubmatch(s); m != nil {
 		return m[1]
 	}
-	// Also strip single quotes
 	if len(s) >= 2 && s[0] == '\'' && s[len(s)-1] == '\'' {
 		return s[1 : len(s)-1]
 	}
 	return s
 }
 
-// formatFrontmatterHTML renders YAML frontmatter as a collapsible <details> block
-// with a formatted key-value display.
+// formatFrontmatterHTML renders YAML frontmatter as a collapsible <details> block.
 func formatFrontmatterHTML(fm *frontmatterData) string {
 	var buf strings.Builder
 
@@ -176,7 +181,6 @@ func formatFrontmatterHTML(fm *frontmatterData) string {
 		key := htmlEscape(entry.Key)
 		value := htmlEscape(strings.TrimSpace(entry.Value))
 
-		// Check if value is multi-line (nested YAML)
 		if strings.Contains(value, "\n") {
 			buf.WriteString(fmt.Sprintf(`<div class="md-view-fm-row">
 <span class="md-view-fm-key">%s</span>
@@ -205,7 +209,9 @@ func htmlEscape(s string) string {
 	return s
 }
 
-const frontmatterCSS = `
+// themeCSS returns the CSS for the frontmatter section, adjusted for theme.
+func themeCSS(dark bool) string {
+	light := `
 .md-view-frontmatter {
     margin-bottom: 24px;
     border: 1px solid #d0d7de;
@@ -269,7 +275,59 @@ const frontmatterCSS = `
     background: transparent;
     white-space: pre-wrap;
 }
+.md-view-theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 100;
+    background: #f6f8fa;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #24292e;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+.md-view-theme-toggle:hover {
+    opacity: 1;
+}
 `
+
+	darkOverrides := `
+[data-theme="dark"] .md-view-frontmatter {
+    border-color: #30363d;
+    background: #161b22;
+}
+[data-theme="dark"] .md-view-frontmatter > summary {
+    color: #8b949e;
+}
+[data-theme="dark"] .md-view-frontmatter > summary:hover {
+    background: #21262d;
+}
+[data-theme="dark"] .md-view-fm-table {
+    border-top-color: #30363d;
+}
+[data-theme="dark"] .md-view-fm-row {
+    border-bottom-color: #21262d;
+}
+[data-theme="dark"] .md-view-fm-key {
+    color: #c9d1d9;
+    background: #161b22;
+}
+[data-theme="dark"] .md-view-fm-value {
+    color: #8b949e;
+}
+[data-theme="dark"] .md-view-theme-toggle {
+    background: #21262d;
+    border-color: #30363d;
+    color: #c9d1d9;
+}
+`
+
+	return light + darkOverrides
+}
 
 // Render reads a markdown file and returns full HTML.
 func Render(filePath string, opts Options) (string, error) {
@@ -278,14 +336,19 @@ func Render(filePath string, opts Options) (string, error) {
 		return "", fmt.Errorf("cannot read file %s: %w", filePath, err)
 	}
 
-	// Extract frontmatter
 	fm, body, hasFM := extractFrontmatter(data)
+
+	// Choose chroma style based on theme
+	chromaStyle := "github"
+	if opts.Dark {
+		chromaStyle = "dracula"
+	}
 
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
 			highlighting.NewHighlighting(
-				highlighting.WithStyle("github"),
+				highlighting.WithStyle(chromaStyle),
 				highlighting.WithFormatOptions(
 					chroma_html.WithClasses(true),
 				),
@@ -302,11 +365,12 @@ func Render(filePath string, opts Options) (string, error) {
 		return "", fmt.Errorf("cannot convert markdown: %w", err)
 	}
 
-	chromaCSS, err := ChromaCSS()
+	chromaCSS, err := ChromaCSS(chromaStyle)
 	if err != nil {
 		return "", err
 	}
 
+	// Reload script
 	reloadScript := ""
 	if !opts.NoReload && opts.File != "" {
 		encodedPath := strings.ReplaceAll(opts.File, " ", "%20")
@@ -321,7 +385,37 @@ new MDSReloader("http://localhost:%d/events?file=%s");
 		)
 	}
 
-	// Determine page title: explicit > frontmatter Title > filename
+	// Mermaid init script (detects ```mermaid blocks and renders them)
+	mermaidScript := fmt.Sprintf(`<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+%s
+</script>`, string(mermaidInitJS))
+
+	// Theme toggle script
+	themeToggleScript := `<script>
+(function() {
+    var toggle = document.querySelector('.md-view-theme-toggle');
+    if (!toggle) return;
+    toggle.addEventListener('click', function() {
+        var html = document.documentElement;
+        var current = html.getAttribute('data-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        toggle.textContent = next === 'dark' ? '☀ Light' : '🌙 Dark';
+        try { localStorage.setItem('md-view-theme', next); } catch(e) {}
+    });
+    // Restore saved theme
+    try {
+        var saved = localStorage.getItem('md-view-theme');
+        if (saved) {
+            document.documentElement.setAttribute('data-theme', saved);
+            toggle.textContent = saved === 'dark' ? '☀ Light' : '🌙 Dark';
+        }
+    } catch(e) {}
+})();
+</script>`
+
+	// Page title
 	title := opts.Title
 	if title == "" && hasFM && fm.Title != "" {
 		title = fm.Title
@@ -331,14 +425,28 @@ new MDSReloader("http://localhost:%d/events?file=%s");
 	}
 	title = "md-view: " + title
 
-	// Build frontmatter section
+	// Frontmatter section
 	fmHTML := ""
 	if hasFM {
 		fmHTML = formatFrontmatterHTML(fm)
 	}
 
+	// Dark CSS (always included — activated by data-theme="dark")
+	darkStyle := fmt.Sprintf(`<style>
+%s
+</style>`, string(darkCSS))
+
+	// Theme attribute on <html>
+	htmlThemeAttr := ""
+	if opts.Dark {
+		htmlThemeAttr = ` data-theme="dark"`
+	}
+
+	// Theme toggle button
+	themeToggleBtn := `<button class="md-view-theme-toggle">🌙 Dark</button>`
+
 	htmlPage := fmt.Sprintf(`<!DOCTYPE html>
-<html lang="en">
+<html lang="en"%s>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -352,20 +460,27 @@ new MDSReloader("http://localhost:%d/events?file=%s");
 <style>
 %s
 </style>
+%s
 </head>
 <body class="markdown-body">
 %s
 %s
 %s
+%s
+%s
 </body>
 </html>`,
+		htmlThemeAttr,
 		title,
 		string(defaultCSS),
 		chromaCSS,
-		frontmatterCSS,
+		themeCSS(opts.Dark),
+		darkStyle,
+		themeToggleBtn,
 		fmHTML,
 		buf.String(),
-		reloadScript,
+		mermaidScript,
+		reloadScript+themeToggleScript,
 	)
 
 	return htmlPage, nil
