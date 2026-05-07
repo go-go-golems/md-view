@@ -133,6 +133,24 @@ func TestRenderWithFrontmatter(t *testing.T) {
 	}
 }
 
+func TestRenderWithFrontmatterLowercase(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdFile := filepath.Join(tmpDir, "fm2.md")
+	content := "---\ntitle: Lowercase Title\nstatus: draft\n---\n# Content\n"
+	if err := os.WriteFile(mdFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	html, err := Render(mdFile, Options{NoReload: true})
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+
+	if !contains(html, "md-view: Lowercase Title") {
+		t.Error("Render() should use frontmatter title (lowercase) as page title")
+	}
+}
+
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsHelper(s, substr))
 }

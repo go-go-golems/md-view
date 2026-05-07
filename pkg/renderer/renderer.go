@@ -136,7 +136,7 @@ func parseFrontmatter(raw string) *frontmatterData {
 			}
 
 			// Track title
-			if key == "Title" && data.Title == "" {
+			if strings.EqualFold(key, "Title") && data.Title == "" {
 				data.Title = stripQuotes(value)
 			}
 
