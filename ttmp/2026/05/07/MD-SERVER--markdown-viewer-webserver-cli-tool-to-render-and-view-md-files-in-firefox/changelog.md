@@ -25,3 +25,8 @@ Implemented full md-view Go binary with Glazed CLI, goldmark renderer, HTTP+sock
 
 Added frontmatter key-value table, page title from frontmatter, styled error pages, --new-window browser launch, unit tests, Makefile
 
+
+## 2026-05-07
+
+Wrote README, getting-started guide, and comprehensive user guide (15KB, 14 sections)
+

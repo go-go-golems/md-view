@@ -271,3 +271,62 @@ The frontmatter was rendering as an ugly blob. Error pages were plain text. Brow
 - Frontmatter keys rendered as `<span class="md-view-fm-key">`, values as `<span class="md-view-fm-value">`
 - Error pages use inline CSS (not embedded base.css) for simplicity
 - i3 rule: `for_window [title="^md-view:.*"] floating enable`
+
+---
+
+## Step 4: Documentation — README, Getting Started, User Guide
+
+Wrote three documentation pieces: a concise README, a getting-started guide, and a comprehensive user guide.
+
+### Prompt Context
+
+**User prompt (verbatim):** "write a nice getting-started and a nice full user-guide, as well as a nice README.md for this project."
+
+**Assistant interpretation:** Write three polished docs: README (project overview), getting-started (first steps), user guide (complete reference).
+
+**Inferred user intent:** The project needs proper documentation for users to discover, install, and use md-view effectively.
+
+**Commit (code):** `e184d1c` — "docs: add README, getting-started guide, and full user guide"
+
+### What I did
+
+- Rewrote README.md as a concise project overview: install, 30-second quick start, commands table, key features, architecture diagram, links to docs
+- Created docs/getting-started.md: install, first view, live reload, multiple files, browser choice, status/stop, quick reference
+- Created docs/user-guide.md: comprehensive guide with table of contents covering all 4 commands (view/serve/status/stop), rendering (GFM, syntax highlighting, frontmatter, page titles), live reload, daemon management, browser integration (i3/Sway floating rules), HTTP API reference, Unix socket protocol, security model, troubleshooting
+
+### Why
+
+A tool is only as good as its documentation. The README is the landing page. The getting-started gets people productive in under a minute. The user guide is the reference they come back to.
+
+### What worked
+
+- Writing the user guide forced me to document all the edge cases and features clearly
+- The i3/Sway integration section is practical — includes floating, resizing, and workspace assignment
+- The HTTP API and Unix socket protocol sections serve as both user docs and developer reference
+
+### What didn't work
+
+- Nothing blocked
+
+### What I learned
+
+- The user guide naturally grew to cover all the implicit knowledge that was only in the design doc
+
+### What warrants a second pair of eyes
+
+- The troubleshooting section — are the common issues actually common?
+
+### What should be done in the future
+
+- Add a `md-view help` topic for the getting-started and user-guide content (embed via Glazed help system)
+- Add screenshots/GIFs to the README
+
+### Code review instructions
+
+- README.md, docs/getting-started.md, docs/user-guide.md
+- Verify links between docs work
+
+### Technical details
+
+- User guide is ~15KB, covers 14 sections with table of contents
+- All three docs use consistent formatting and examples
