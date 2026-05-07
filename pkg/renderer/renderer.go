@@ -1,8 +1,8 @@
 package renderer
 
 import (
-	_ "embed"
 	"bytes"
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -58,12 +58,75 @@ type Options struct {
 	Port int
 }
 
+// extractFrontmatter splits input into YAML frontmatter and body.
+// Returns (frontmatter, body, hasFrontmatter).
+func extractFrontmatter(data []byte) (string, []byte, bool) {
+	content := string(data)
+	if !strings.HasPrefix(content, "---\n") && !strings.HasPrefix(content, "---\r\n") {
+		return "", data, false
+	}
+
+	// Find closing ---
+	end := strings.Index(content[3:], "\n---")
+	if end == -1 {
+		// No closing delimiter — not frontmatter
+		return "", data, false
+	}
+
+	frontmatter := content[3 : 3+end]
+	body := content[3+end+4:] // skip past closing ---
+
+	// Trim leading newlines from body
+	body = strings.TrimPrefix(body, "\n")
+	body = strings.TrimPrefix(body, "\r\n")
+
+	return frontmatter, []byte(body), true
+}
+
+// formatFrontmatterHTML renders YAML frontmatter as a collapsible <details> block.
+func formatFrontmatterHTML(frontmatter string) string {
+	// Escape HTML entities
+	fm := htmlEscape(frontmatter)
+
+	// Format YAML nicely: trim trailing whitespace per line, remove blank lines at start/end
+	lines := strings.Split(fm, "\n")
+	var formatted []string
+	for _, line := range lines {
+		formatted = append(formatted, strings.TrimRight(line, " \t"))
+	}
+	// Trim leading/trailing blank lines
+	for len(formatted) > 0 && formatted[0] == "" {
+		formatted = formatted[1:]
+	}
+	for len(formatted) > 0 && formatted[len(formatted)-1] == "" {
+		formatted = formatted[:len(formatted)-1]
+	}
+
+	fmFormatted := strings.Join(formatted, "\n")
+
+	return fmt.Sprintf(`<details class="md-view-frontmatter">
+<summary>Frontmatter</summary>
+<pre><code class="language-yaml">%s</code></pre>
+</details>`, fmFormatted)
+}
+
+func htmlEscape(s string) string {
+	s = strings.ReplaceAll(s, "&", "&amp;")
+	s = strings.ReplaceAll(s, "<", "&lt;")
+	s = strings.ReplaceAll(s, ">", "&gt;")
+	s = strings.ReplaceAll(s, "\"", "&quot;")
+	return s
+}
+
 // Render reads a markdown file and returns full HTML.
 func Render(filePath string, opts Options) (string, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", fmt.Errorf("cannot read file %s: %w", filePath, err)
 	}
+
+	// Extract frontmatter
+	frontmatter, body, hasFM := extractFrontmatter(data)
 
 	md := goldmark.New(
 		goldmark.WithExtensions(
@@ -82,7 +145,7 @@ func Render(filePath string, opts Options) (string, error) {
 	)
 
 	var buf bytes.Buffer
-	if err := md.Convert(data, &buf); err != nil {
+	if err := md.Convert(body, &buf); err != nil {
 		return "", fmt.Errorf("cannot convert markdown: %w", err)
 	}
 
@@ -111,6 +174,12 @@ new MDSReloader("http://localhost:%d/events?file=%s");
 	}
 	title = "md-view: " + title
 
+	// Build frontmatter section
+	fmHTML := ""
+	if hasFM {
+		fmHTML = formatFrontmatterHTML(frontmatter)
+	}
+
 	htmlPage := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -123,8 +192,53 @@ new MDSReloader("http://localhost:%d/events?file=%s");
 <style>
 %s
 </style>
+<style>
+.md-view-frontmatter {
+    margin-bottom: 24px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    background: #f6f8fa;
+    padding: 0;
+}
+.md-view-frontmatter > summary {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #656d76;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.md-view-frontmatter > summary::before {
+    content: "▶";
+    font-size: 10px;
+    transition: transform 0.15s;
+}
+.md-view-frontmatter[open] > summary::before {
+    transform: rotate(90deg);
+}
+.md-view-frontmatter > summary:hover {
+    background: #eaeef2;
+}
+.md-view-frontmatter pre {
+    margin: 0;
+    padding: 12px 16px;
+    border-top: 1px solid #d0d7de;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-x: auto;
+}
+.md-view-frontmatter code {
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    background: transparent;
+    padding: 0;
+}
+</style>
 </head>
 <body class="markdown-body">
+%s
 %s
 %s
 </body>
@@ -132,6 +246,7 @@ new MDSReloader("http://localhost:%d/events?file=%s");
 		title,
 		string(defaultCSS),
 		chromaCSS,
+		fmHTML,
 		buf.String(),
 		reloadScript,
 	)
