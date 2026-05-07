@@ -13,6 +13,10 @@ topics:
       description: Web server and HTTP serving
     - slug: unix-socket
       description: Unix domain socket IPC
+    - slug: go
+      description: Go programming language
+    - slug: glazed
+      description: Glazed CLI framework
 docTypes:
     - slug: design-doc
       description: Structured rationale and architecture notes
