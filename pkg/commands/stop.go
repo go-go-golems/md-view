@@ -2,13 +2,11 @@ package commands
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-go-golems/glazed/pkg/cli"
 	"github.com/go-go-golems/glazed/pkg/cmds"
 	"github.com/go-go-golems/glazed/pkg/cmds/values"
-	"github.com/go-go-golems/glazed/pkg/middlewares"
-	"github.com/go-go-golems/glazed/pkg/settings"
-	"github.com/go-go-golems/glazed/pkg/types"
 )
 
 type StopCommand struct {
@@ -16,11 +14,6 @@ type StopCommand struct {
 }
 
 func NewStopCommand() (*StopCommand, error) {
-	glazedSection, err := settings.NewGlazedSchema()
-	if err != nil {
-		return nil, err
-	}
-
 	commandSettingsSection, err := cli.NewCommandSettingsSection()
 	if err != nil {
 		return nil, err
@@ -35,24 +28,21 @@ Stop the md-view daemon by sending SIGTERM to its process.
 Examples:
   md-view stop
 `),
-		cmds.WithSections(glazedSection, commandSettingsSection),
+		cmds.WithSections(commandSettingsSection),
 	)
 
 	return &StopCommand{CommandDescription: cmdDesc}, nil
 }
 
-func (c *StopCommand) RunIntoGlazeProcessor(
+func (c *StopCommand) Run(
 	ctx context.Context,
-	vals *values.Values,
-	gp middlewares.Processor,
+	_ *values.Values,
 ) error {
 	err := RunStop(ctx)
 	if err != nil {
 		return err
 	}
 
-	row := types.NewRow(
-		types.MRP("status", "stopped"),
-	)
-	return gp.AddRow(ctx, row)
+	fmt.Println("Daemon stopped.")
+	return nil
 }

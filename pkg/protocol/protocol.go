@@ -13,6 +13,7 @@ type Command struct {
 	Command string `json:"command"`
 	Path    string `json:"path,omitempty"`
 	Dark    bool   `json:"dark,omitempty"`
+	Browser string `json:"browser,omitempty"`
 }
 
 // Response represents a server → client message.

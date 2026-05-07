@@ -2,15 +2,13 @@ package commands
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-go-golems/glazed/pkg/cli"
 	"github.com/go-go-golems/glazed/pkg/cmds"
 	"github.com/go-go-golems/glazed/pkg/cmds/fields"
 	"github.com/go-go-golems/glazed/pkg/cmds/schema"
 	"github.com/go-go-golems/glazed/pkg/cmds/values"
-	"github.com/go-go-golems/glazed/pkg/middlewares"
-	"github.com/go-go-golems/glazed/pkg/settings"
-	"github.com/go-go-golems/glazed/pkg/types"
 )
 
 type ViewCommand struct {
@@ -18,19 +16,15 @@ type ViewCommand struct {
 }
 
 type ViewSettings struct {
-	File     string `glazed:"file"`
-	NoReload bool  `glazed:"no-reload"`
-	Browser  string `glazed:"browser"`
-	Port     int    `glazed:"port"`
-	Dark     bool   `glazed:"dark"`
+	File       string `glazed:"file"`
+	NoReload   bool   `glazed:"no-reload"`
+	Browser    string `glazed:"browser"`
+	NoBrowser  bool   `glazed:"no-browser"`
+	Port       int    `glazed:"port"`
+	Dark       bool   `glazed:"dark"`
 }
 
 func NewViewCommand() (*ViewCommand, error) {
-	glazedSection, err := settings.NewGlazedSchema()
-	if err != nil {
-		return nil, err
-	}
-
 	commandSettingsSection, err := cli.NewCommandSettingsSection()
 	if err != nil {
 		return nil, err
@@ -43,11 +37,13 @@ func NewViewCommand() (*ViewCommand, error) {
 View a markdown file rendered as HTML in your browser.
 
 The md-view daemon is started automatically if not already running.
+By default, opens the file in Firefox using --new-window.
 
 Examples:
   md-view view ./README.md
   md-view view --no-reload ./notes.md
-  md-view view --browser firefox ./doc.md
+  md-view view --browser "google-chrome" ./doc.md
+  md-view view --no-browser ./doc.md
   md-view view --dark ./doc.md
 `),
 		cmds.WithArguments(
@@ -68,8 +64,14 @@ Examples:
 			fields.New(
 				"browser",
 				fields.TypeString,
-				fields.WithDefault(""),
-				fields.WithHelp("Override browser command (default: xdg-open or $BROWSER)"),
+				fields.WithDefault("firefox --new-window"),
+				fields.WithHelp("Browser command to open the URL (default: firefox --new-window)"),
+			),
+			fields.New(
+				"no-browser",
+				fields.TypeBool,
+				fields.WithDefault(false),
+				fields.WithHelp("Don't open the browser, just start the daemon and print the URL"),
 			),
 			fields.New(
 				"port",
@@ -84,16 +86,15 @@ Examples:
 				fields.WithHelp("Use dark theme"),
 			),
 		),
-		cmds.WithSections(glazedSection, commandSettingsSection),
+		cmds.WithSections(commandSettingsSection),
 	)
 
 	return &ViewCommand{CommandDescription: cmdDesc}, nil
 }
 
-func (c *ViewCommand) RunIntoGlazeProcessor(
+func (c *ViewCommand) Run(
 	ctx context.Context,
 	vals *values.Values,
-	gp middlewares.Processor,
 ) error {
 	s := &ViewSettings{}
 	if err := vals.DecodeSectionInto(schema.DefaultSlug, s); err != nil {
@@ -105,9 +106,6 @@ func (c *ViewCommand) RunIntoGlazeProcessor(
 		return err
 	}
 
-	row := types.NewRow(
-		types.MRP("url", url),
-		types.MRP("file", s.File),
-	)
-	return gp.AddRow(ctx, row)
+	fmt.Println(url)
+	return nil
 }

@@ -197,8 +197,12 @@ func (s *Server) handleSocketConn(_ context.Context, conn net.Conn) {
 		data, _ := json.Marshal(resp)
 		conn.Write(append(data, '\n'))
 
-		// Open browser in background
-		go s.openBrowser(url)
+		// Open browser in background (if browser command provided)
+		if cmd.Browser != "" {
+			go s.openBrowserWith(url, cmd.Browser)
+		} else {
+			go s.openBrowser(url)
+		}
 
 	case "ping":
 		resp := protocol.Response{Status: "pong"}
@@ -425,6 +429,23 @@ func (s *Server) openBrowser(url string) {
 	cmd.Stderr = io.Discard
 	if err := cmd.Start(); err != nil {
 		log.Printf("Cannot open browser: %v", err)
+	}
+}
+
+// openBrowserWith opens a URL using the given browser command string.
+// The command string can contain arguments (e.g. "firefox --new-window")
+// which are split before execution.
+func (s *Server) openBrowserWith(url, browserCmd string) {
+	parts := strings.Fields(browserCmd)
+	if len(parts) == 0 {
+		return
+	}
+	args := append(parts[1:], url)
+	cmd := exec.Command(parts[0], args...)
+	cmd.Stdout = io.Discard
+	cmd.Stderr = io.Discard
+	if err := cmd.Start(); err != nil {
+		log.Printf("Cannot open browser %q: %v", browserCmd, err)
 	}
 }
 

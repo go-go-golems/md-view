@@ -45,11 +45,16 @@ func RunView(ctx context.Context, s *ViewSettings) (string, error) {
 		return "", fmt.Errorf("daemon socket not ready: %w", err)
 	}
 
-	// Send view command
+	// Send view command with browser and no-browser settings
 	cmd := protocol.Command{
 		Command: "view",
 		Path:    absPath,
 		Dark:    s.Dark,
+	}
+
+	// Pass browser command only if not suppressed
+	if !s.NoBrowser {
+		cmd.Browser = s.Browser
 	}
 
 	resp, err := protocol.SendCommand(socketPath, cmd)
@@ -65,7 +70,7 @@ func RunView(ctx context.Context, s *ViewSettings) (string, error) {
 }
 
 // RunServe implements the `md-view serve` command — starts the server in foreground.
-func RunServe(ctx context.Context, s *ServeSettings, _ interface{}) error {
+func RunServe(ctx context.Context, s *ServeSettings) error {
 	// Write PID file
 	if err := daemon.WritePID(); err != nil {
 		return fmt.Errorf("cannot write PID file: %w", err)
@@ -83,6 +88,24 @@ func RunServe(ctx context.Context, s *ServeSettings, _ interface{}) error {
 // RunStop implements the `md-view stop` command.
 func RunStop(_ context.Context) error {
 	return daemon.Stop()
+}
+
+// RunStatus implements the `md-view status` command — prints daemon status to stdout.
+func RunStatus() error {
+	status, err := daemon.GetStatus()
+	if err != nil {
+		fmt.Printf("md-view daemon: not running (error: %v)\n", err)
+		return nil
+	}
+	if !status.Running {
+		fmt.Println("md-view daemon: not running")
+		return nil
+	}
+	fmt.Printf("md-view daemon: running (PID %d, port %d)\n", status.PID, status.Port)
+	if !status.StartTime.IsZero() {
+		fmt.Printf("  uptime: %s\n", time.Since(status.StartTime).Round(time.Second))
+	}
+	return nil
 }
 
 // ensureDaemonRunning checks if the daemon is alive, and starts it if not.

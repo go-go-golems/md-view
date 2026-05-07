@@ -8,8 +8,6 @@ import (
 	"github.com/go-go-golems/glazed/pkg/cmds/fields"
 	"github.com/go-go-golems/glazed/pkg/cmds/schema"
 	"github.com/go-go-golems/glazed/pkg/cmds/values"
-	"github.com/go-go-golems/glazed/pkg/middlewares"
-	"github.com/go-go-golems/glazed/pkg/settings"
 )
 
 type ServeCommand struct {
@@ -21,11 +19,6 @@ type ServeSettings struct {
 }
 
 func NewServeCommand() (*ServeCommand, error) {
-	glazedSection, err := settings.NewGlazedSchema()
-	if err != nil {
-		return nil, err
-	}
-
 	commandSettingsSection, err := cli.NewCommandSettingsSection()
 	if err != nil {
 		return nil, err
@@ -52,26 +45,20 @@ Examples:
 				fields.WithHelp("HTTP port (0 = random available)"),
 			),
 		),
-		cmds.WithSections(glazedSection, commandSettingsSection),
+		cmds.WithSections(commandSettingsSection),
 	)
 
 	return &ServeCommand{CommandDescription: cmdDesc}, nil
 }
 
-func (c *ServeCommand) RunIntoGlazeProcessor(
+func (c *ServeCommand) Run(
 	ctx context.Context,
 	vals *values.Values,
-	gp middlewares.Processor,
 ) error {
 	s := &ServeSettings{}
 	if err := vals.DecodeSectionInto(schema.DefaultSlug, s); err != nil {
 		return err
 	}
 
-	err := RunServe(ctx, s, gp)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return RunServe(ctx, s)
 }
