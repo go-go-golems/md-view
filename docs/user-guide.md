@@ -15,8 +15,10 @@ Everything you need to know about md-view — commands, flags, rendering, integr
 - [Rendering](#rendering)
   - [Markdown Features](#markdown-features)
   - [Syntax Highlighting](#syntax-highlighting)
+  - [Mermaid Diagrams](#mermaid-diagrams)
   - [YAML Frontmatter](#yaml-frontmatter)
   - [Page Titles](#page-titles)
+- [Dark Theme](#dark-theme)
 - [Live Reload](#live-reload)
 - [Daemon Management](#daemon-management)
   - [How the Daemon Starts](#how-the-daemon-starts)
@@ -85,6 +87,7 @@ The primary command. Opens a Markdown file in your browser as rendered HTML.
 |------|------|---------|-------------|
 | `--browser` | string | `$BROWSER` or auto-detect | Override the browser command |
 | `--no-reload` | bool | false | Disable live reload for this view |
+| `--dark` | bool | false | Use dark theme |
 | `--port` | int | 0 | HTTP port for the daemon (0 = random available) |
 
 **Examples:**
@@ -98,6 +101,9 @@ md-view view --no-reload ./notes.md
 
 # Force Firefox
 md-view view --browser firefox ./doc.md
+
+# Dark theme
+md-view view --dark ./doc.md
 
 # Use a specific port (useful for firewalls)
 md-view view --port 8080 ./doc.md
@@ -229,6 +235,26 @@ console.log("Hello, md-view!");
 
 No JavaScript is required — highlighting is done entirely on the server.
 
+### Mermaid Diagrams
+
+md-view renders [Mermaid](https://mermaid.js.org/) diagrams automatically. Write a fenced code block with the `mermaid` language tag:
+
+````markdown
+```mermaid
+graph TD
+    A[CLI] -->|Unix Socket| B[Daemon]
+    B -->|HTTP| C[Browser]
+```
+````
+
+The diagram renders as an SVG directly in the page. Mermaid.js is **embedded in the md-view binary** — no network access is required.
+
+**Supported diagram types:** flowchart, sequence, class, state, ER, Gantt, pie, mindmap, and more. See the [Mermaid documentation](https://mermaid.js.org/intro/) for syntax.
+
+**Theme switching:** When you toggle the dark theme, Mermaid diagrams are automatically re-rendered with the corresponding theme (`default` for light, `dark` for dark mode).
+
+**How it works:** goldmark renders ` ```mermaid ` blocks as `<code class="language-mermaid">`. A small initialization script converts these into `<div class="mermaid">` elements that mermaid.js processes into SVG.
+
 ### YAML Frontmatter
 
 If your Markdown file starts with YAML frontmatter (delimited by `---`), md-view:
@@ -265,6 +291,34 @@ All titles are prefixed with `md-view: ` for window manager matching. Examples:
 | `README.md` | (none) | `md-view: README.md` |
 | `01-diary.md` | `Diary` | `md-view: Diary` |
 | `api.md` | `API Reference` | `md-view: API Reference` |
+
+---
+
+## Dark Theme
+
+md-view includes a full dark theme modeled after GitHub's dark mode. Three ways to activate it:
+
+| Method | How |
+|--------|-----|
+| **Toggle button** | Click **🌙 Dark** in the top-right corner of any rendered page |
+| **CLI flag** | `md-view view --dark file.md` |
+| **URL parameter** | Add `?theme=dark` to the render URL |
+
+### What changes in dark mode
+
+- Page background, text, and link colors switch to dark variants
+- Code blocks use a dark background with Dracula-style syntax highlighting
+- Tables, blockquotes, and task lists use dark colors
+- Frontmatter section uses dark borders and backgrounds
+- Mermaid diagrams re-render with the `dark` theme
+
+### Code highlighting in dark mode
+
+Both light and dark Chroma CSS are always included in the page. Dark rules are prefixed with `[data-theme="dark"]` selectors, so the toggle switches highlighting instantly without a page reload.
+
+### Theme persistence
+
+Your theme preference is saved in `localStorage`. After you toggle dark mode once, all future pages opened in md-view will use the dark theme until you toggle back. This works even across different files and daemon restarts.
 
 ---
 
@@ -373,10 +427,10 @@ The daemon serves HTTP on `http://127.0.0.1:<PORT>/`. All endpoints are localhos
 ### Render Endpoint
 
 ```
-GET /render?file=<absolute_path>
+GET /render?file=<absolute_path>[&theme=dark]
 ```
 
-Render a Markdown file as styled HTML. Returns `text/html`.
+Render a Markdown file as styled HTML. Returns `text/html`. Add `&theme=dark` to use the dark theme.
 
 **Example:**
 
@@ -409,9 +463,10 @@ curl "http://localhost:42213/raw?file=/home/you/README.md"
 ### Static Assets
 
 ```
-GET /static/base.css      — GitHub-flavored Markdown CSS
-GET /static/reload.js      — SSE client for live reload
-GET /favicon.ico           — Returns 204 No Content
+GET /static/base.css          — GitHub-flavored Markdown CSS
+GET /static/reload.js          — SSE client for live reload
+GET /static/mermaid.min.js     — Embedded Mermaid.js library (3.1MB)
+GET /favicon.ico               — Returns 204 No Content
 ```
 
 ### SSE Events Endpoint
@@ -563,3 +618,4 @@ md-view view ./README.md
 | [chroma](https://github.com/alecthomas/chroma) | Syntax highlighting |
 | [fsnotify](https://github.com/fsnotify/fsnotify) | File watching for live reload |
 | [Glazed](https://github.com/go-go-golems/glazed) | CLI framework (Cobra + structured output) |
+| [mermaid.js](https://mermaid.js.org/) | Diagram rendering (embedded, not a Go dependency) |

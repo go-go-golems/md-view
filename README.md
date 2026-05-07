@@ -31,10 +31,12 @@ That's it. Your browser opens on a rendered page. Edit the file, the page refres
 
 - **One command** — `md-view view file.md` does everything
 - **Background daemon** — auto-starts, stays running, no setup
-- **GitHub-flavored rendering** — tables, task lists, strikethrough, footnotes
-- **Syntax highlighting** — 200+ languages, server-side, no JS needed
+- **GitHub-flavored rendering** — tables, task lists, fenced code blocks, strikethrough
+- **Syntax highlighting** — 200+ languages, server-side via Chroma (no JS required)
+- **Mermaid diagrams** — ` ```mermaid ` blocks rendered as SVG, works offline (mermaid.js embedded)
+- **Dark theme** — toggle button, `--dark` flag, or `?theme=dark` URL param; code highlighting switches too
 - **Live reload** — page refreshes when the file changes
-- **Frontmatter support** — YAML frontmatter is parsed and displayed as a collapsible key-value table; the `Title` field becomes the browser tab title
+- **Frontmatter support** — YAML frontmatter parsed and displayed as a collapsible key-value table; the `Title` field becomes the browser tab title
 - **i3 / Sway friendly** — all windows titled `md-view: <filename>` so you can float them
 - **Zero config** — random port, XDG state dir, respects `$BROWSER`
 
@@ -44,9 +46,9 @@ That's it. Your browser opens on a rendered page. Edit the file, the page refres
 ┌──────────────┐   Unix Socket    ┌──────────────────┐    HTTP     ┌─────────┐
 │  md-view CLI │ ─── JSON cmd ──► │  md-view server  │ ─────────► │ Browser │
 │  (ephemeral) │                  │  (daemon)        │            │         │
-└──────────────┘                  │                  │            └─────────┘
-                                  │  - Renders .md   │
-                                  │  - Serves HTML   │
+└──────────────┘                  │                  │  ◄── SSE ── │         │
+                                  │  - Renders .md   │   reload   │         │
+                                  │  - Serves HTML   │            └─────────┘
                                   │  - Watches files │
                                   └──────────────────┘
 ```

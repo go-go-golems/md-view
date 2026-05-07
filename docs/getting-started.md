@@ -52,6 +52,34 @@ To disable live reload for a specific file:
 md-view view --no-reload ./README.md
 ```
 
+## Dark Theme
+
+Click the **🌙 Dark** button in the top-right corner of any rendered page. The entire page switches — including syntax highlighting and Mermaid diagrams. Your preference is saved in localStorage and persists across page loads.
+
+Other ways to activate dark theme:
+
+```bash
+# CLI flag
+md-view view --dark ./README.md
+
+# URL parameter
+http://localhost:42213/render?file=/home/you/README.md&theme=dark
+```
+
+## Mermaid Diagrams
+
+Write Mermaid diagrams in fenced code blocks:
+
+````
+```mermaid
+graph TD
+    A[CLI] -->|Unix Socket| B[Daemon]
+    B -->|HTTP| C[Browser]
+```
+````
+
+md-view renders them as SVG diagrams automatically. Mermaid.js is embedded in the binary — no network required. Diagrams re-render with the correct theme when you toggle dark mode.
+
 ## View Multiple Files
 
 Each `md-view view` opens a new browser window:
@@ -114,11 +142,12 @@ The daemon cleans up its PID file, socket, and port file on exit.
 ## Quick Reference
 
 ```
-md-view view <FILE>           # View a file (auto-starts daemon)
-md-view view --no-reload FILE # View without live reload
+md-view view <FILE>             # View a file (auto-starts daemon)
+md-view view --dark FILE        # View with dark theme
+md-view view --no-reload FILE   # View without live reload
 md-view view --browser firefox FILE  # Use Firefox
-md-view view --port 8080 FILE # Use a specific port
-md-view serve                  # Start server in foreground
-md-view status                 # Show daemon status
-md-view stop                   # Stop the daemon
+md-view view --port 8080 FILE   # Use a specific port
+md-view serve                    # Start server in foreground
+md-view status                   # Show daemon status
+md-view stop                     # Stop the daemon
 ```
