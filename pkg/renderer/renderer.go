@@ -30,6 +30,9 @@ var reloadJS []byte
 //go:embed static/mermaid-init.js
 var mermaidInitJS []byte
 
+//go:embed static/mermaid.min.js
+var mermaidJS []byte
+
 // CSS returns the embedded GitHub-flavored CSS (light theme).
 func CSS() []byte {
 	return defaultCSS
@@ -43,6 +46,11 @@ func DarkCSS() []byte {
 // ReloadJS returns the embedded live-reload script.
 func ReloadJS() []byte {
 	return reloadJS
+}
+
+// MermaidJS returns the embedded mermaid.js library.
+func MermaidJS() []byte {
+	return mermaidJS
 }
 
 // ChromaCSS returns the CSS for syntax highlighting.
@@ -421,10 +429,11 @@ new MDSReloader("http://localhost:%d/events?file=%s");
 	}
 
 	// Mermaid init script (detects ```mermaid blocks and renders them)
-	mermaidScript := fmt.Sprintf(`<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+	// mermaid.js is served from the daemon at /static/mermaid.min.js
+	mermaidScript := fmt.Sprintf(`<script src="http://localhost:%d/static/mermaid.min.js"></script>
 <script>
 %s
-</script>`, string(mermaidInitJS))
+</script>`, opts.Port, string(mermaidInitJS))
 
 	// Theme toggle script
 	themeToggleScript := `<script>

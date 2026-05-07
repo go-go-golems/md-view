@@ -380,6 +380,9 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 	case "/static/reload.js":
 		w.Header().Set("Content-Type", "application/javascript")
 		w.Write(renderer.ReloadJS())
+	case "/static/mermaid.min.js":
+		w.Header().Set("Content-Type", "application/javascript")
+		w.Write(renderer.MermaidJS())
 	default:
 		http.NotFound(w, r)
 	}
