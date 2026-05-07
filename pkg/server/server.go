@@ -30,8 +30,8 @@ type Server struct {
 	watcher    *watcher.FileWatcher
 	mu         sync.Mutex
 	sseClients map[string]map[<-chan struct{}]struct{} // file path → set of watch channels
-	browser    string // override browser command
-	noReload   bool   // disable live reload
+	browser    string                                  // override browser command
+	noReload   bool                                    // disable live reload
 }
 
 // NewServer creates a new Server bound to localhost on the given port (0 = random).
@@ -136,7 +136,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 // Shutdown gracefully shuts down the server.
 func (s *Server) Shutdown() {
-	s.watcher.Close()
+	_ = s.watcher.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = s.httpServer.Shutdown(ctx)
@@ -167,7 +167,7 @@ func (s *Server) acceptUnixConnections(ctx context.Context, listener net.Listene
 
 // handleSocketConn handles a single Unix socket connection.
 func (s *Server) handleSocketConn(_ context.Context, conn net.Conn) {
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	buf := make([]byte, 4096)
 	n, err := conn.Read(buf)
@@ -181,9 +181,7 @@ func (s *Server) handleSocketConn(_ context.Context, conn net.Conn) {
 		return
 	}
 	if err := json.Unmarshal([]byte(line), &cmd); err != nil {
-		resp := protocol.Response{Status: "error", Message: fmt.Sprintf("invalid command: %v", err)}
-		data, _ := json.Marshal(resp)
-		conn.Write(append(data, '\n'))
+		s.writeSocketResponse(conn, protocol.Response{Status: "error", Message: fmt.Sprintf("invalid command: %v", err)})
 		return
 	}
 
@@ -193,9 +191,7 @@ func (s *Server) handleSocketConn(_ context.Context, conn net.Conn) {
 		if cmd.Dark {
 			url += "&theme=dark"
 		}
-		resp := protocol.Response{Status: "ok", URL: url}
-		data, _ := json.Marshal(resp)
-		conn.Write(append(data, '\n'))
+		s.writeSocketResponse(conn, protocol.Response{Status: "ok", URL: url})
 
 		// Open browser in background (if browser command provided)
 		if cmd.Browser != "" {
@@ -205,14 +201,10 @@ func (s *Server) handleSocketConn(_ context.Context, conn net.Conn) {
 		}
 
 	case "ping":
-		resp := protocol.Response{Status: "pong"}
-		data, _ := json.Marshal(resp)
-		conn.Write(append(data, '\n'))
+		s.writeSocketResponse(conn, protocol.Response{Status: "pong"})
 
 	case "stop":
-		resp := protocol.Response{Status: "ok", Message: "shutting down"}
-		data, _ := json.Marshal(resp)
-		conn.Write(append(data, '\n'))
+		s.writeSocketResponse(conn, protocol.Response{Status: "ok", Message: "shutting down"})
 		go func() {
 			time.Sleep(100 * time.Millisecond)
 			s.Shutdown()
@@ -220,9 +212,7 @@ func (s *Server) handleSocketConn(_ context.Context, conn net.Conn) {
 		}()
 
 	default:
-		resp := protocol.Response{Status: "error", Message: fmt.Sprintf("unknown command: %s", cmd.Command)}
-		data, _ := json.Marshal(resp)
-		conn.Write(append(data, '\n'))
+		s.writeSocketResponse(conn, protocol.Response{Status: "error", Message: fmt.Sprintf("unknown command: %s", cmd.Command)})
 	}
 }
 
@@ -291,7 +281,7 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(html))
+	_, _ = w.Write([]byte(html))
 }
 
 func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
@@ -314,7 +304,7 @@ func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Write(data)
+	_, _ = w.Write(data)
 }
 
 func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
@@ -380,13 +370,13 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/static/base.css":
 		w.Header().Set("Content-Type", "text/css")
-		w.Write(renderer.CSS())
+		_, _ = w.Write(renderer.CSS())
 	case "/static/reload.js":
 		w.Header().Set("Content-Type", "application/javascript")
-		w.Write(renderer.ReloadJS())
+		_, _ = w.Write(renderer.ReloadJS())
 	case "/static/mermaid.min.js":
 		w.Header().Set("Content-Type", "application/javascript")
-		w.Write(renderer.MermaidJS())
+		_, _ = w.Write(renderer.MermaidJS())
 	default:
 		http.NotFound(w, r)
 	}
@@ -457,7 +447,12 @@ func urlEncodePath(p string) string {
 func (s *Server) writeErrorHTML(w http.ResponseWriter, code int, title, message string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
-	w.Write([]byte(renderErrorPage(code, title, message)))
+	_, _ = w.Write([]byte(renderErrorPage(code, title, message)))
+}
+
+func (s *Server) writeSocketResponse(conn net.Conn, resp protocol.Response) {
+	data, _ := json.Marshal(resp)
+	_, _ = conn.Write(append(data, '\n'))
 }
 
 func htmlEscape(s string) string {

@@ -227,17 +227,17 @@ func formatFrontmatterHTML(fm *frontmatterData) string {
 		value := htmlEscape(strings.TrimSpace(entry.Value))
 
 		if strings.Contains(value, "\n") {
-			buf.WriteString(fmt.Sprintf(`<div class="md-view-fm-row">
+			fmt.Fprintf(&buf, `<div class="md-view-fm-row">
 <span class="md-view-fm-key">%s</span>
 <pre class="md-view-fm-value">%s</pre>
 </div>
-`, key, value))
+`, key, value)
 		} else {
-			buf.WriteString(fmt.Sprintf(`<div class="md-view-fm-row">
+			fmt.Fprintf(&buf, `<div class="md-view-fm-row">
 <span class="md-view-fm-key">%s</span>
 <span class="md-view-fm-value">%s</span>
 </div>
-`, key, value))
+`, key, value)
 		}
 	}
 

@@ -1,0 +1,99 @@
+version: 2
+project_name: md-view
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+builds:
+  - id: md-view-linux
+    env:
+      - CGO_ENABLED=1
+      - CC_linux_amd64=gcc
+      - CXX_linux_amd64=g++
+      - CC_linux_arm64=aarch64-linux-gnu-gcc
+      - CXX_linux_arm64=aarch64-linux-gnu-g++
+      - 'CC={{ index .Env (print "CC_" .Os "_" .Arch) }}'
+      - 'CXX={{ index .Env (print "CXX_" .Os "_" .Arch) }}'
+    main: ./cmd/md-view
+    binary: md-view
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+  - id: md-view-darwin
+    env:
+      - CGO_ENABLED=1
+    main: ./cmd/md-view
+    binary: md-view
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+signs:
+  - artifacts: checksum
+    args: [ "--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}" ]
+
+brews:
+  - name: md-view
+    description: "A markdown viewer that just works — one command, beautiful rendering, browser opens automatically"
+    homepage: "https://github.com/go-go-golems/md-view"
+    repository:
+      owner: go-go-golems
+      name: homebrew-go-go-go
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+
+nfpms:
+  -
+    id: packages
+
+    vendor: GO GO GOLEMS
+    homepage: https://github.com/go-go-golems/
+    maintainer: Manuel Odendahl <wesen@ruinwesen.com>
+
+    description: |-
+      md-view is a markdown viewer daemon that renders .md files in your browser.
+
+      Features:
+      - One command: md-view view file.md
+      - Background daemon with auto-start
+      - GitHub-flavored rendering with syntax highlighting
+      - Mermaid diagram support
+      - Dark theme toggle
+      - Live reload on file change
+      - Frontmatter support
+
+    license: MIT
+
+    formats:
+      - deb
+      - rpm
+
+    release: 1
+    section: default
+    priority: extra
+
+    deb:
+      lintian_overrides:
+        - statically-linked-binary
+        - changelog-file-missing-in-native-package
+
+publishers:
+  - name: fury.io
+    ids:
+      - packages
+    dir: "{{ dir .ArtifactPath }}"
+    cmd: curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/go-go-golems/

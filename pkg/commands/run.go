@@ -75,7 +75,7 @@ func RunServe(ctx context.Context, s *ServeSettings) error {
 	if err := daemon.WritePID(); err != nil {
 		return fmt.Errorf("cannot write PID file: %w", err)
 	}
-	defer daemon.Cleanup()
+	defer func() { _ = daemon.Cleanup() }()
 
 	srv, err := server.NewServer(s.Port, "", false)
 	if err != nil {

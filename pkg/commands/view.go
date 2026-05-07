@@ -16,12 +16,12 @@ type ViewCommand struct {
 }
 
 type ViewSettings struct {
-	File       string `glazed:"file"`
-	NoReload   bool   `glazed:"no-reload"`
-	Browser    string `glazed:"browser"`
-	NoBrowser  bool   `glazed:"no-browser"`
-	Port       int    `glazed:"port"`
-	Dark       bool   `glazed:"dark"`
+	File      string `glazed:"file"`
+	NoReload  bool   `glazed:"no-reload"`
+	Browser   string `glazed:"browser"`
+	NoBrowser bool   `glazed:"no-browser"`
+	Port      int    `glazed:"port"`
+	Dark      bool   `glazed:"dark"`
 }
 
 func NewViewCommand() (*ViewCommand, error) {

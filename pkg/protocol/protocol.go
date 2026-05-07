@@ -29,7 +29,7 @@ func SendCommand(socketPath string, cmd Command) (*Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to daemon socket: %w", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	data, err := json.Marshal(cmd)
 	if err != nil {

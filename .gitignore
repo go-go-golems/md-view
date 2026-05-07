@@ -1,6 +1,24 @@
-# Binaries
-/md-view
+# Binaries for programs and plugins
 *.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories
+# vendor/
+
+# GoReleaser dist
+dist/
+
+# Project binary
+/md-view
 
 # State files
 *.pid
@@ -15,6 +33,14 @@
 # OS
 .DS_Store
 
+# misc files and directories
+.env
+.envrc
+.history
+
 # Playwright
 .playwright-mcp/
 *.png
+
+# golangci-lint binary
+.bin/
