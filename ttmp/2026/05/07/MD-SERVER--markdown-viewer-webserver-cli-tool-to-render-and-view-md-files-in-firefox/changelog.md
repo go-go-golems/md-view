@@ -30,3 +30,8 @@ Added frontmatter key-value table, page title from frontmatter, styled error pag
 
 Wrote README, getting-started guide, and comprehensive user guide (15KB, 14 sections)
 
+
+## 2026-05-07
+
+Added Mermaid diagram rendering (mermaid.js CDN) and dark theme (CSS + chroma dracula + toggle button + --dark flag + ?theme=dark param)
+

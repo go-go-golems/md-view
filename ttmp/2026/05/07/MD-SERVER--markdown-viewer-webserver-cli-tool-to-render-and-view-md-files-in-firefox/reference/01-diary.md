@@ -330,3 +330,85 @@ A tool is only as good as its documentation. The README is the landing page. The
 
 - User guide is ~15KB, covers 14 sections with table of contents
 - All three docs use consistent formatting and examples
+
+---
+
+## Step 5: Mermaid Diagrams + Dark Theme
+
+Added client-side Mermaid diagram rendering and a full dark theme with three activation methods.
+
+### Prompt Context
+
+**User prompt (verbatim):** "add mermaid diagram support, dark theme. Add tasks, then implement, commit at appropriate intervals"
+
+**Assistant interpretation:** Add Mermaid rendering (client-side) and a dark theme (CSS + toggle) to md-view. Add docmgr tasks, implement, and commit.
+
+**Inferred user intent:** Make md-view useful for technical documentation that uses Mermaid diagrams, and add dark mode for users who prefer it.
+
+**Commit (code):** `edfb81a` — "feat: add Mermaid diagram rendering and dark theme"
+
+### What I did
+
+- Added mermaid.js (CDN) for client-side rendering of ```mermaid code blocks
+- Created mermaid-init.js that detects `<code class="language-mermaid">` blocks, wraps them in `<div class="mermaid">`, and initializes mermaid
+- Added full dark CSS (GitHub dark style) for body, code, tables, blockquotes, frontmatter, and theme toggle
+- Added chroma dark overrides (dracula-style token colors)
+- Added three ways to activate dark theme:
+  - `--dark` CLI flag (appends `&theme=dark` to URL)
+  - `?theme=dark` query parameter
+  - Toggle button in top-right corner (🌙 Dark / ☀ Light)
+- Theme persisted in localStorage so it survives page reloads
+- Updated protocol to carry `dark` boolean in view commands
+- Updated server to read `?theme=` query param and pass it to renderer
+- Renderer now selects chroma style based on theme: "github" for light, "dracula" for dark
+- Added `Dark` field to `ViewSettings`, `Options`, and `Command`
+
+### Why
+
+Technical documentation commonly uses Mermaid for architecture diagrams. Dark mode is a quality-of-life feature many developers expect.
+
+### What worked
+
+- Mermaid integration was straightforward — goldmark renders ```mermaid as `<code class="language-mermaid">`, mermaid.js detects these and renders SVG
+- The dark CSS was largely a color inversion of the light theme
+- The toggle button with localStorage persistence is a nice UX touch
+- Three activation methods cover all use cases: CLI flag for scripting, URL param for direct links, toggle for ad-hoc switching
+
+### What didn't work
+
+- The chroma dark overrides are manual CSS — not auto-generated from the "dracula" style. This means some token types might be missing colors. A better approach would be to generate two full chroma CSS files (one for light, one for dark) and include both, selecting via `[data-theme="dark"]` prefix.
+
+### What I learned
+
+- mermaid.js needs `<div class="mermaid">` not `<code class="language-mermaid">` — the init script converts one to the other
+- The dark theme is best implemented as CSS overrides on `[data-theme="dark"]` selectors, not a separate CSS file. This way the page only needs one CSS bundle.
+
+### What was tricky to build
+
+- The chroma style selection happens at render time, not at toggle time. When you toggle dark mode, the code highlighting colors don't change because chroma CSS was generated for the initial theme. A future improvement would be to include both chroma stylesheets and switch via CSS selectors.
+
+### What warrants a second pair of eyes
+
+- The mermaid.js CDN dependency — should we embed it? CDN is simpler but requires network. Embedding adds ~1MB to the binary.
+- The chroma style switching at toggle time — currently only works on initial page load, not on toggle
+
+### What should be done in the future
+
+- Include both light and dark chroma CSS and switch via `[data-theme]` selectors so code highlighting changes on toggle
+- Embed mermaid.js in the binary (or make it optional)
+- Test Mermaid dark theme rendering (mermaid.initialize with theme: 'dark')
+
+### Code review instructions
+
+- `pkg/renderer/renderer.go` — theme-aware rendering, mermaid script injection
+- `pkg/renderer/static/dark.css` — dark theme CSS
+- `pkg/renderer/static/mermaid-init.js` — mermaid initialization
+- `pkg/commands/view.go` — --dark flag
+- `pkg/protocol/protocol.go` — dark field in Command
+
+### Technical details
+
+- Mermaid CDN: `https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js`
+- Dark chroma style: "dracula"
+- Light chroma style: "github"
+- Theme toggle: `<button class="md-view-theme-toggle">` with localStorage persistence
