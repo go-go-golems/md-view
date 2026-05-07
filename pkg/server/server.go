@@ -54,6 +54,7 @@ func NewServer(port int, browser string, noReload bool) (*Server, error) {
 	mux.HandleFunc("/raw", s.handleRaw)
 	mux.HandleFunc("/events", s.handleEvents)
 	mux.HandleFunc("/static/", s.handleStatic)
+	mux.HandleFunc("/favicon.ico", s.handleFavicon)
 
 	s.httpServer = &http.Server{
 		Addr:    fmt.Sprintf("127.0.0.1:%d", port),
@@ -353,11 +354,13 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 	case "/static/reload.js":
 		w.Header().Set("Content-Type", "application/javascript")
 		w.Write(renderer.ReloadJS())
-	case "/favicon.ico":
-		w.WriteHeader(http.StatusNoContent)
 	default:
 		http.NotFound(w, r)
 	}
+}
+
+func (s *Server) handleFavicon(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // --- Helpers ---
