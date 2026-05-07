@@ -221,42 +221,61 @@ func (s *Server) handleSocketConn(_ context.Context, conn net.Conn) {
 
 // --- HTTP Handlers ---
 
+// renderErrorPage returns a styled HTML error page.
+func renderErrorPage(code int, title, message string) string {
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>md-view: %s</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #24292e; max-width: 600px; margin: 80px auto; padding: 0 20px; }
+h1 { font-size: 24px; color: #cf222e; margin-bottom: 8px; }
+p { color: #656d76; font-size: 16px; line-height: 1.5; }
+code { background: #f6f8fa; padding: 2px 6px; border-radius: 3px; font-size: 14px; }
+.status { font-size: 72px; font-weight: 700; color: #d0d7de; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="status">%d</div>
+<h1>%s</h1>
+<p>%s</p>
+</body>
+</html>`, title, code, title, message)
+}
+
 func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 	filePath := r.URL.Query().Get("file")
 	if filePath == "" {
-		http.Error(w, "missing file parameter", http.StatusBadRequest)
+		s.writeErrorHTML(w, 400, "Bad Request", "Missing <code>file</code> query parameter. Usage: <code>/render?file=/path/to/file.md</code>")
 		return
 	}
 
 	absPath, err := filepath.Abs(filePath)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("invalid path: %v", err), http.StatusBadRequest)
+		s.writeErrorHTML(w, 400, "Bad Request", fmt.Sprintf("Invalid path: %v", err))
 		return
 	}
 
 	info, err := os.Stat(absPath)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("cannot stat file: %v", err), http.StatusNotFound)
+		s.writeErrorHTML(w, 404, "Not Found", fmt.Sprintf("File not found: <code>%s</code>", htmlEscape(absPath)))
 		return
 	}
 	if !info.Mode().IsRegular() {
-		http.Error(w, "not a regular file", http.StatusBadRequest)
+		s.writeErrorHTML(w, 400, "Bad Request", fmt.Sprintf("<code>%s</code> is not a regular file", htmlEscape(absPath)))
 		return
 	}
-
-	// Extract filename for the page title
-	fileName := filepath.Base(absPath)
 
 	opts := renderer.Options{
 		File:     absPath,
 		Port:     s.port,
 		NoReload: s.noReload,
-		Title:    fileName,
 	}
 
 	html, err := renderer.Render(absPath, opts)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("render error: %v", err), http.StatusInternalServerError)
+		s.writeErrorHTML(w, 500, "Internal Server Error", fmt.Sprintf("Render error: %v", err))
 		return
 	}
 
@@ -401,4 +420,18 @@ func (s *Server) openBrowser(url string) {
 
 func urlEncodePath(p string) string {
 	return strings.ReplaceAll(p, " ", "%20")
+}
+
+// writeErrorHTML writes a styled HTML error page.
+func (s *Server) writeErrorHTML(w http.ResponseWriter, code int, title, message string) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(code)
+	w.Write([]byte(renderErrorPage(code, title, message)))
+}
+
+func htmlEscape(s string) string {
+	s = strings.ReplaceAll(s, "&", "&amp;")
+	s = strings.ReplaceAll(s, "<", "&lt;")
+	s = strings.ReplaceAll(s, ">", "&gt;")
+	return s
 }
