@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	chroma_html "github.com/alecthomas/chroma/v2/formatters/html"
@@ -106,8 +107,9 @@ new MDSReloader("http://localhost:%d/events?file=%s");
 
 	title := opts.Title
 	if title == "" {
-		title = filePath
+		title = filepath.Base(filePath)
 	}
+	title = "md-view: " + title
 
 	htmlPage := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="en">
