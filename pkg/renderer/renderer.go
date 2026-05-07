@@ -51,6 +51,8 @@ type Options struct {
 	NoReload bool
 	// File is the absolute path of the markdown file (used for SSE endpoint).
 	File string
+	// Title is the page title (defaults to filename if empty).
+	Title string
 	// Port is the HTTP port (used for SSE endpoint URL).
 	Port int
 }
@@ -102,6 +104,11 @@ new MDSReloader("http://localhost:%d/events?file=%s");
 		)
 	}
 
+	title := opts.Title
+	if title == "" {
+		title = filePath
+	}
+
 	htmlPage := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -120,7 +127,7 @@ new MDSReloader("http://localhost:%d/events?file=%s");
 %s
 </body>
 </html>`,
-		filePath,
+		title,
 		string(defaultCSS),
 		chromaCSS,
 		buf.String(),

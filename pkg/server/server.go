@@ -243,10 +243,14 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Extract filename for the page title
+	fileName := filepath.Base(absPath)
+
 	opts := renderer.Options{
 		File:     absPath,
 		Port:     s.port,
 		NoReload: s.noReload,
+		Title:    fileName,
 	}
 
 	html, err := renderer.Render(absPath, opts)
@@ -349,6 +353,8 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 	case "/static/reload.js":
 		w.Header().Set("Content-Type", "application/javascript")
 		w.Write(renderer.ReloadJS())
+	case "/favicon.ico":
+		w.WriteHeader(http.StatusNoContent)
 	default:
 		http.NotFound(w, r)
 	}
