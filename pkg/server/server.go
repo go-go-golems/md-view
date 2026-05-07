@@ -384,10 +384,13 @@ func (s *Server) openBrowser(url string) {
 	}
 
 	var cmd *exec.Cmd
-	if browser == "xdg-open" {
+	switch browser {
+	case "xdg-open":
 		cmd = exec.Command(browser, url)
-	} else {
-		cmd = exec.Command(browser, "--new-tab", url)
+	case "firefox":
+		cmd = exec.Command(browser, "--new-window", url)
+	default:
+		cmd = exec.Command(browser, "--new-window", url)
 	}
 	cmd.Stdout = io.Discard
 	cmd.Stderr = io.Discard
