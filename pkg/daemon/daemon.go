@@ -15,6 +15,8 @@ const (
 )
 
 // StateDir returns the XDG state directory for md-view.
+//
+// #nosec G703 -- XDG_STATE_HOME is a standard env var, not untrusted input
 func StateDir() (string, error) {
 	xdgState := os.Getenv("XDG_STATE_HOME")
 	if xdgState == "" {

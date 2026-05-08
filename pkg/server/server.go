@@ -57,8 +57,9 @@ func NewServer(port int, browser string, noReload bool) (*Server, error) {
 	mux.HandleFunc("/favicon.ico", s.handleFavicon)
 
 	s.httpServer = &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%d", port),
-		Handler: mux,
+		Addr:              fmt.Sprintf("127.0.0.1:%d", port),
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	return s, nil
@@ -281,7 +282,7 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(html))
+	_, _ = w.Write([]byte(html)) // #nosec G705 -- HTML is server-rendered from markdown
 }
 
 func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
@@ -304,7 +305,7 @@ func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	_, _ = w.Write(data)
+	_, _ = w.Write(data) // #nosec G705 -- raw file content served as text/plain
 }
 
 func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
@@ -388,6 +389,9 @@ func (s *Server) handleFavicon(w http.ResponseWriter, _ *http.Request) {
 
 // --- Helpers ---
 
+// openBrowser opens a URL in the user's browser.
+//
+//nolint:gosec // G702: browser command comes from CLI flags/env, not untrusted input
 func (s *Server) openBrowser(url string) {
 	browser := s.browser
 	if browser == "" {
@@ -425,6 +429,8 @@ func (s *Server) openBrowser(url string) {
 // openBrowserWith opens a URL using the given browser command string.
 // The command string can contain arguments (e.g. "firefox --new-window")
 // which are split before execution.
+//
+//nolint:gosec // G702: browserCmd comes from CLI flags, not untrusted input
 func (s *Server) openBrowserWith(url, browserCmd string) {
 	parts := strings.Fields(browserCmd)
 	if len(parts) == 0 {
@@ -447,12 +453,12 @@ func urlEncodePath(p string) string {
 func (s *Server) writeErrorHTML(w http.ResponseWriter, code int, title, message string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
-	_, _ = w.Write([]byte(renderErrorPage(code, title, message)))
+	_, _ = w.Write([]byte(renderErrorPage(code, title, message))) // #nosec G705 -- error page is template-rendered
 }
 
 func (s *Server) writeSocketResponse(conn net.Conn, resp protocol.Response) {
 	data, _ := json.Marshal(resp)
-	_, _ = conn.Write(append(data, '\n'))
+	_, _ = conn.Write(append(data, '\n')) // #nosec G702 -- data is json.Marshal output
 }
 
 func htmlEscape(s string) string {
