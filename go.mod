@@ -1,6 +1,6 @@
 module github.com/go-go-golems/md-view
 
-go 1.25.8
+go 1.25.10
 
 require (
 	github.com/alecthomas/chroma/v2 v2.16.0

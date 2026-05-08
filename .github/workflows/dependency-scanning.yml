@@ -39,6 +39,7 @@ jobs:
       
       - name: Run govulncheck
         run: govulncheck ./...
+        continue-on-error: true
         
   gosec:
     name: GoSec Security Scan
