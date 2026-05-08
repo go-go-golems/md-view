@@ -118,3 +118,70 @@ None of the md-view commands produce tabular data — they open browsers, run se
 - `BuildCobraCommandFromCommand` checks `cmds.BareCommand` interface and uses `Run()` directly
 - Browser command splitting: `strings.Fields("firefox --new-window")` → `["firefox", "--new-window"]`
 - Protocol backward compatibility: `Browser` field has `json:"browser,omitempty"` — old daemons ignore it
+
+---
+
+## Step 2: Documentation Update for i3 Config + BareCommand Changes
+
+Updated README, getting-started, and user-guide to reflect BareCommand changes (no more Glazed table output) and expanded i3/Sway integration docs.
+
+### Prompt Context
+
+**User prompt (verbatim):** "Update doc for i3"
+
+**Assistant interpretation:** Update all docs to reflect the BareCommand changes and add proper i3/Sway floating window configuration instructions.
+
+**Inferred user intent:** The docs still showed old Glazed table output and didn't have clear i3 config instructions with file paths and reload commands.
+
+**Commit (code):** `19352d4` — "docs: update README, getting-started, user-guide for BareCommand + i3 config"
+
+### What I did
+
+- Removed Glazed table output examples from view, status, and stop command docs
+- Updated status output from table to plain text format
+- Added dedicated i3/Sway setup section to getting-started with config file paths (`~/.config/i3/config`) and reload commands (`i3-msg reload`)
+- Expanded i3 integration in user-guide with scratchpad, resize, workspace, and center examples
+- Documented `--browser` default as `firefox --new-window` and `--no-browser` flag
+- Removed `$BROWSER` env var references (no longer used by default)
+- Updated quick reference with new flags
+
+### Why
+
+The docs were outdated after the BareCommand conversion — still showing table output that no longer exists. The i3 section needed concrete file paths and reload commands so users can copy-paste and get working immediately.
+
+### What worked
+
+- Adding a dedicated "i3 / Sway Setup" section with the config file path makes it immediately actionable
+- The scratchpad example (`move scratchpad` + `scratchpad show` keybinding) is a useful advanced pattern
+
+### What didn't work
+
+- Had to be careful with overlapping edits in getting-started.md
+
+### What I learned
+
+- N/A
+
+### What was tricky to build
+
+- N/A
+
+### What warrants a second pair of eyes
+
+- The user-guide i3 section — make sure the config examples are correct i3 syntax
+
+### What should be done in the future
+
+- N/A
+
+### Code review instructions
+
+- `docs/getting-started.md` — new i3/Sway Setup section, updated browser/quick-ref
+- `docs/user-guide.md` — expanded i3 integration, removed table output, updated browser selection
+- `README.md` — updated feature bullets
+
+### Technical details
+
+- i3 config file: `~/.config/i3/config`
+- Sway config file: `~/.config/sway/config`
+- Reload: `i3-msg reload` or `swaymsg reload`
