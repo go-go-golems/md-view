@@ -85,7 +85,8 @@ The primary command. Opens a Markdown file in your browser as rendered HTML.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--browser` | string | `$BROWSER` or auto-detect | Override the browser command |
+| `--browser` | string | `firefox --new-window` | Browser command to open the URL |
+| `--no-browser` | bool | false | Don't open the browser, just start the daemon and print the URL |
 | `--no-reload` | bool | false | Disable live reload for this view |
 | `--dark` | bool | false | Use dark theme |
 | `--port` | int | 0 | HTTP port for the daemon (0 = random available) |
@@ -93,14 +94,20 @@ The primary command. Opens a Markdown file in your browser as rendered HTML.
 **Examples:**
 
 ```bash
-# View a file (simplest usage)
+# View a file (simplest usage — opens Firefox in a new window)
 md-view view ./README.md
 
 # View without live reload
 md-view view --no-reload ./notes.md
 
-# Force Firefox
-md-view view --browser firefox ./doc.md
+# Don't open a browser, just print the URL
+md-view view --no-browser ./doc.md
+
+# Use a different browser
+md-view view --browser "google-chrome" ./doc.md
+
+# Use xdg-open (system default)
+md-view view --browser "xdg-open" ./doc.md
 
 # Dark theme
 md-view view --dark ./doc.md
@@ -111,22 +118,13 @@ md-view view --port 8080 ./doc.md
 
 **Output:**
 
-The CLI outputs the rendered URL in a Glazed table:
+The CLI prints the rendered URL to stdout:
 
 ```
-+---------------------------------------------------------+----------------------+
-| url                                                     | file                 |
-+---------------------------------------------------------+----------------------+
-| http://localhost:42213/render?file=/home/you/README.md  | /home/you/README.md  |
-+---------------------------------------------------------+----------------------+
+http://localhost:42213/render?file=/home/you/README.md
 ```
 
-You can use Glazed output flags to change the format:
-
-```bash
-md-view view --output json ./README.md
-md-view view --select url ./README.md
-```
+With `--no-browser`, only the URL is printed and no browser is opened.
 
 ---
 
@@ -164,26 +162,19 @@ Press `Ctrl+C` to stop the server gracefully.
 md-view status
 ```
 
-Show whether the daemon is running, its PID, HTTP port, uptime, and socket path.
+Show whether the daemon is running, its PID, HTTP port, and uptime.
 
-**Output:**
-
-```
-+---------+-------+-------+--------+------------------------------------------------+
-| running | pid   | port  | uptime | socket                                         |
-+---------+-------+-------+--------+------------------------------------------------+
-| true    | 23461 | 42213 | 3s     | /home/you/.local/state/md-view/md-view.sock    |
-+---------+-------+-------+--------+------------------------------------------------+
-```
-
-When the daemon is not running:
+**Output (running):**
 
 ```
-+---------+-----+------+--------+------------------------------------------------+
-| running | pid | port | uptime | socket                                         |
-+---------+-----+------+--------+------------------------------------------------+
-| false   | 0   | 0    |        | /home/you/.local/state/md-view/md-view.sock    |
-+---------+-----+------+--------+------------------------------------------------+
+md-view daemon: running (PID 23461, port 42213)
+  uptime: 3s
+```
+
+**Output (not running):**
+
+```
+md-view daemon: not running
 ```
 
 ---
@@ -195,6 +186,12 @@ md-view stop
 ```
 
 Stop the daemon by sending SIGTERM. If the process doesn't exit within 5 seconds, it's force-killed. All state files (PID, socket, port) are cleaned up.
+
+**Output:**
+
+```
+Daemon stopped.
+```
 
 ---
 
@@ -384,11 +381,27 @@ If the daemon crashes without cleaning up (e.g., `kill -9`), the PID file may be
 
 ### Browser Selection
 
-md-view selects the browser in this order:
+The default browser command is `firefox --new-window`. You can override it:
 
-1. `--browser` flag (if specified)
-2. `$BROWSER` environment variable
-3. Auto-detection: tries `xdg-open`, `firefox`, `google-chrome`, `chromium`
+- `--browser` flag — specify any browser command (e.g. `"google-chrome"`, `"xdg-open"`)
+- `--no-browser` — don't open a browser at all; just print the URL
+- The `--browser` value is passed to the daemon, which splits it into executable + arguments and runs it
+
+**Examples:**
+
+```bash
+# Default: firefox --new-window
+md-view view ./README.md
+
+# System default browser
+md-view view --browser "xdg-open" ./README.md
+
+# Google Chrome
+md-view view --browser "google-chrome" ./README.md
+
+# No browser (URL only)
+md-view view --no-browser ./README.md
+```
 
 ### New Window Behavior
 
@@ -398,15 +411,31 @@ For Firefox, this uses `--new-window`. For Chrome/Chromium, this uses `--new-win
 
 ### i3 / Sway Integration
 
-All md-view browser windows have titles starting with `md-view:`. Add this to your i3 or Sway config:
+All md-view browser windows have titles starting with `md-view:`. Add this to your i3 config (`~/.config/i3/config`):
 
 ```
 for_window [title="^md-view:.*"] floating enable
 ```
 
-After `i3-msg reload` (or `swaymsg reload`), every `md-view view` will open as a floating window.
+For Sway, add to `~/.config/sway/config`:
 
-**Advanced: resize and position**
+```
+for_window [title="^md-view:.*"] floating enable
+```
+
+Reload your config:
+
+```bash
+# i3
+i3-msg reload
+
+# Sway
+swaymsg reload
+```
+
+After reloading, every `md-view view` will open as a floating window. This works because md-view opens Firefox with `--new-window`, creating a separate i3 window that can be managed independently.
+
+**Advanced: resize and center**
 
 ```
 for_window [title="^md-view:.*"] floating enable, resize set 960 800, move position center
@@ -416,6 +445,13 @@ for_window [title="^md-view:.*"] floating enable, resize set 960 800, move posit
 
 ```
 for_window [title="^md-view:.*"] move container to workspace $ws3
+```
+
+**Advanced: set scratchpad (toggle with a keybinding)**
+
+```
+for_window [title="^md-view:.*"] move scratchpad
+bindsym $mod+m scratchpad show
 ```
 
 ---
@@ -501,7 +537,7 @@ The daemon listens on a Unix domain socket at `~/.local/state/md-view/md-view.so
 
 | Command | JSON | Description |
 |---------|------|-------------|
-| `view` | `{"command": "view", "path": "/abs/path/to/file.md"}` | Open a file in the browser |
+| `view` | `{"command": "view", "path": "/abs/path/to/file.md", "browser": "firefox --new-window"}` | Open a file in the browser |
 | `ping` | `{"command": "ping"}` | Check if the daemon is alive |
 | `stop` | `{"command": "stop"}` | Shut down the daemon |
 
@@ -605,7 +641,6 @@ md-view view ./README.md
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `$BROWSER` | (auto-detect) | Browser command to use |
 | `$XDG_STATE_HOME` | `~/.local/state` | Base directory for state files |
 
 ---
@@ -617,5 +652,5 @@ md-view view ./README.md
 | [goldmark](https://github.com/yuin/goldmark) | Markdown → HTML conversion |
 | [chroma](https://github.com/alecthomas/chroma) | Syntax highlighting |
 | [fsnotify](https://github.com/fsnotify/fsnotify) | File watching for live reload |
-| [Glazed](https://github.com/go-go-golems/glazed) | CLI framework (Cobra + structured output) |
+| [Glazed](https://github.com/go-go-golems/glazed) | CLI framework (Cobra + BareCommand) |
 | [mermaid.js](https://mermaid.js.org/) | Diagram rendering (embedded, not a Go dependency) |

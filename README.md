@@ -37,8 +37,8 @@ That's it. Your browser opens on a rendered page. Edit the file, the page refres
 - **Dark theme** — toggle button, `--dark` flag, or `?theme=dark` URL param; code highlighting switches too
 - **Live reload** — page refreshes when the file changes
 - **Frontmatter support** — YAML frontmatter parsed and displayed as a collapsible key-value table; the `Title` field becomes the browser tab title
-- **i3 / Sway friendly** — all windows titled `md-view: <filename>` so you can float them
-- **Zero config** — random port, XDG state dir, respects `$BROWSER`
+- **i3 / Sway ready** — windows titled `md-view: <filename>`, just add a floating rule to your config
+- **Zero config** — random port, XDG state dir, defaults to Firefox `--new-window`
 
 ## Architecture
 

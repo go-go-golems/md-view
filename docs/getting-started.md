@@ -94,20 +94,36 @@ All served by the same daemon. No extra processes.
 
 ## Choose Your Browser
 
-md-view respects the `$BROWSER` environment variable. If that's not set, it tries `xdg-open`, `firefox`, `google-chrome`, and `chromium` in order.
+By default, md-view opens Firefox in a new window (`firefox --new-window`). This works great with i3 and Sway floating windows.
 
 Override it for a single command:
 
 ```bash
-md-view view --browser firefox ./notes.md
+# Use a different browser
+md-view view --browser "google-chrome" ./notes.md
+
+# Use the system default browser
+md-view view --browser "xdg-open" ./notes.md
+
+# Don't open a browser at all — just print the URL
+md-view view --no-browser ./notes.md
 ```
 
-Or set it globally:
+## i3 / Sway Setup
+
+All md-view windows have titles starting with `md-view:`. To make them float automatically, add to your i3 config (`~/.config/i3/config`):
+
+```
+for_window [title="^md-view:.*"] floating enable
+```
+
+Then reload:
 
 ```bash
-export BROWSER=firefox
-md-view view ./notes.md
+i3-msg reload
 ```
+
+Now every `md-view view` opens as a floating window. For Sway, use the same rule in `~/.config/sway/config` and `swaymsg reload`.
 
 ## Check What's Running
 
@@ -118,11 +134,8 @@ md-view status
 Output:
 
 ```
-+---------+-------+-------+--------+------------------------------------------------+
-| running | pid   | port  | uptime | socket                                         |
-+---------+-------+-------+--------+------------------------------------------------+
-| true    | 23461 | 42213 | 3s     | /home/you/.local/state/md-view/md-view.sock    |
-+---------+-------+-------+--------+------------------------------------------------+
+md-view daemon: running (PID 23461, port 42213)
+  uptime: 3s
 ```
 
 ## Stop the Daemon
@@ -137,17 +150,18 @@ The daemon cleans up its PID file, socket, and port file on exit.
 
 - Read the **[User Guide](user-guide.md)** for all commands, flags, i3/Sway integration, and troubleshooting
 - Try viewing a file with YAML frontmatter — md-view parses it into a collapsible table
-- Set up a floating window rule in your window manager
+- Add `for_window [title="^md-view:.*"] floating enable` to your i3/Sway config
 
 ## Quick Reference
 
 ```
-md-view view <FILE>             # View a file (auto-starts daemon)
-md-view view --dark FILE        # View with dark theme
-md-view view --no-reload FILE   # View without live reload
-md-view view --browser firefox FILE  # Use Firefox
-md-view view --port 8080 FILE   # Use a specific port
-md-view serve                    # Start server in foreground
-md-view status                   # Show daemon status
-md-view stop                     # Stop the daemon
+md-view view <FILE>                     # View a file (opens Firefox in a new window)
+md-view view --dark FILE                # View with dark theme
+md-view view --no-reload FILE           # View without live reload
+md-view view --no-browser FILE          # Print URL without opening browser
+md-view view --browser "xdg-open" FILE  # Use system default browser
+md-view view --port 8080 FILE           # Use a specific port
+md-view serve                           # Start server in foreground
+md-view status                          # Show daemon status
+md-view stop                            # Stop the daemon
 ```
