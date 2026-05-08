@@ -413,11 +413,11 @@ func (s *Server) openBrowser(url string) {
 	var cmd *exec.Cmd
 	switch browser {
 	case "xdg-open":
-		cmd = exec.Command(browser, url)
+		cmd = exec.Command(browser, url) // #nosec G702 -- browser comes from CLI flags/env, not untrusted input
 	case "firefox":
-		cmd = exec.Command(browser, "--new-window", url)
+		cmd = exec.Command(browser, "--new-window", url) // #nosec G702
 	default:
-		cmd = exec.Command(browser, "--new-window", url)
+		cmd = exec.Command(browser, "--new-window", url) // #nosec G702
 	}
 	cmd.Stdout = io.Discard
 	cmd.Stderr = io.Discard
