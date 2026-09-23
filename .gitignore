@@ -45,6 +45,12 @@
 # golangci-lint binary
 .bin/
 
+# Local Go build cache for this repo (used to keep builds self-contained)
+.gocache/
+
+# Patched Wails CLI source (see `make wails-cli`)
+.wails-cli/
+
 # Wails (desktop app)
 /build/
 /frontend/wailsjs/

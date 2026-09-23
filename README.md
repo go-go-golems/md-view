@@ -12,8 +12,13 @@
 
 ```bash
 make build
-build/bin/md-view view ./README.md
+build/bin/md-view view ./README.md          # Linux / Windows
+# macOS Wails emits an .app bundle instead:
+build/bin/md-view.app/Contents/MacOS/md-view view ./README.md
 ```
+
+On any platform `make run FILE=./README.md` builds and launches the right
+binary, and `make install` picks the correct path.
 
 That's it. A native window opens showing the rendered Markdown. Edit the file, and the view refreshes automatically.
 
@@ -79,9 +84,15 @@ md-view is a CGO desktop binary (it links the system WebView). It is **not** ins
 ```bash
 git clone https://github.com/go-go-golems/md-view.git
 cd md-view
-make build            # produces build/bin/md-view
+make build            # Linux/Windows: build/bin/md-view; macOS: build/bin/md-view.app
+make run FILE=./README.md   # launch the built app (picks the platform path)
 make install          # copies it next to the existing md-view, or to /usr/local/bin
 ```
+
+On macOS, `make build` first builds a patched Wails CLI into `.bin/wails` (see
+the `wails-cli` target): the stock Wails v2.12.0 bundles a `golang.org/x/tools`
+too old for Go 1.25+, which crashes its binding static-analysis step. macOS
+needs only the Xcode command line tools.
 
 **Native packages** (Homebrew / deb / rpm) are produced by GoReleaser on release; the build configuration is in `.goreleaser.yaml`.
 

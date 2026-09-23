@@ -25,7 +25,12 @@ var assets embed.FS
 // `md-view` process with this id is caught by the lock; its os.Args are
 // forwarded to instance #1 via OnSecondInstanceLaunch. This replaces the
 // daemon's "reuse running server over a Unix socket" with zero filesystem state.
-const singleInstanceID = "github.com/go-go-golems/md-view"
+//
+// The id must be a single path segment: on macOS Wails turns it into
+// <TMPDIR>/<id>.lock and does not create intermediate directories, so a
+// slash-containing id (e.g. a Go import path) fails with ENOENT and the app
+// exits as though a second instance were already running.
+const singleInstanceID = "com.go-go-golems.md-view"
 
 func main() {
 	rootCmd := newRootCommand(runDesktop, func(file string, dark bool) error {

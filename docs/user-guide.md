@@ -425,7 +425,7 @@ Some editors write to a temp file and rename, which can evade fsnotify. Try savi
 
 ### "command not found: md-view"
 
-md-view is not on your `PATH`. Either run it directly (`build/bin/md-view view README.md`) or install it:
+md-view is not on your `PATH`. Either run it directly (`build/bin/md-view view README.md` on Linux/Windows, or `build/bin/md-view.app/Contents/MacOS/md-view view README.md` on macOS), use `make run FILE=README.md`, or install it:
 
 ```bash
 make install      # copies to the existing md-view location, or /usr/local/bin/md-view
