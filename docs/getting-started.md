@@ -13,7 +13,8 @@ md-view is a CGO desktop binary (it links the system WebView), so it is **not** 
 ```bash
 git clone https://github.com/go-go-golems/md-view.git
 cd md-view
-make build            # produces build/bin/md-view
+make build            # Linux/Windows: build/bin/md-view; macOS: build/bin/md-view.app
+make run FILE=./README.md   # launch the built app (platform-aware)
 ```
 
 Optionally put it on your `PATH`:

@@ -5,8 +5,9 @@
 md-view is a **Wails v2 desktop application** (single binary, since the MD-WAILS cutover). It MUST be built with `wails build`, not plain `go build` — Wails injects build tags a raw `go build` omits (the binary refuses to start otherwise).
 
 - Run (dev, hot-reload): `wails dev -tags webkit2_41` or `make wails-dev`
-- Build (production): `make build` (runs `make frontend-css` then `wails build -tags webkit2_41`) → `build/bin/md-view`
-- View a file: `build/bin/md-view view README.md` (or `--dark`)
+- Build (production): `make build` (runs `make frontend-css` then `wails build -tags webkit2_41`). Output is `build/bin/md-view` on Linux/Windows and `build/bin/md-view.app/Contents/MacOS/md-view` on macOS.
+- View a file: `make run FILE=README.md` (platform-aware), or run the built binary directly (macOS: `build/bin/md-view.app/Contents/MacOS/md-view view README.md`) with optional `--dark`.
+- macOS build note: `make wails-cli` builds a patched Wails CLI into `.bin/wails`; `make build` prefers it. Stock Wails v2.12.0 vendors `golang.org/x/tools v0.30.0`, which crashes binding static-analysis on Go 1.25+ (`internal error: package ... without types was imported from ...`).
 - Test: `go test -tags webkit2_41 ./...` or `make test`
 - Run single test: `go test -tags webkit2_41 . -run TestParseViewArgs`
 - Regenerate frontend CSS: `make frontend-css` (writes `frontend/dist/chroma.css` + `ui.css`)

@@ -89,12 +89,19 @@ func TestAbsolutizeFileArgRewritesOsArgs(t *testing.T) {
 		t.Fatalf("chdir: %v", err)
 	}
 
+	// macOS resolves /var -> /private/var in Getwd, so derive the expected
+	// base from the process cwd rather than from t.TempDir()'s path.
+	realDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd after chdir: %v", err)
+	}
+
 	savedArgs := os.Args
 	t.Cleanup(func() { os.Args = savedArgs })
 	os.Args = []string{"md-view", "view", "notes.md"}
 
 	got := absolutizeFileArg("notes.md")
-	want := filepath.Join(dir, "notes.md")
+	want := filepath.Join(realDir, "notes.md")
 	if got != want {
 		t.Errorf("absolutizeFileArg returned %q, want %q", got, want)
 	}
