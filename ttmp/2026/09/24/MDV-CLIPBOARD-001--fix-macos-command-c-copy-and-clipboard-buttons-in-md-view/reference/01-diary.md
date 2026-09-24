@@ -174,3 +174,73 @@ export function CopyText(arg1:string):Promise<void>;
 
 Commit: `fix(MDV-CLIPBOARD-001): route copy buttons through native clipboard`.
 Runtime click verification on macOS still pending (next step).
+
+## Step 11 — Native validation on macOS
+
+The user's running `md-view` held the Wails single-instance lock (`com.go-go-golems.md-view`),
+so an isolated test launched with a private temp dir to get its own lock file (Wails uses
+`$TMPDIR`/`<id>.lock` on darwin):
+
+```
+$ TMPDIR=/tmp/mdview-clip-test ./build/bin/md-view.app/Contents/MacOS/md-view view --foreground ./README.md &
+```
+
+Menu bar inspection (`osascript` + System Events), proving Fix A's menu exists at the native level:
+
+```
+$ osascript -e 'tell application "System Events" to tell process "md-view" to get name of every menu bar item of menu bar 1'
+Apple, md-view, File, Edit, View
+```
+
+End-to-end ⌘C test: seeded the clipboard with a sentinel, activated the window, sent ⌘A then ⌘C:
+
+```
+$ printf 'SENTINEL-NOT-COPIED-123' | pbcopy
+$ osascript ... keystroke "a" using command down; delay; keystroke "c" using command down
+$ pbpaste | wc -c
+7108
+$ pbpaste | head -c 80
+📂 Open
+README.md
+🕘 Recent
+🌙 Dark
+md-view
+
+A markdown viewer that just works...
+```
+
+The sentinel was replaced by the rendered page: **⌘C works and copies the DOM selection.**
+
+Test instance killed and `/tmp/mdview-clip-test` removed. Side effect: the system clipboard now
+holds a snippet of the README (the sentinel was overwritten by the test).
+
+Build/regeneration evidence:
+
+```
+$ make build            # regenerated bindings; Built .../md-view.app/Contents/MacOS/md-view in 3.695s
+$ grep CopyText frontend/wailsjs/go/main/App.d.ts
+export function CopyText(arg1:string):Promise<void>;
+```
+
+Formatting and vet:
+
+```
+$ gofmt -l app.go menu.go menu_test.go   # (no output)
+$ GOWORK=off go vet -tags webkit2_41 .   # (no output)
+```
+
+`make lint` **fails**, but not because of this change: the installed golangci-lint binary cannot
+decode Go 1.27.1 export data ("export data version 4 is greater than maximum supported version
+2") and reports typecheck errors in untouched packages such as `pkg/watcher`. Recorded as an
+environment limitation, not a regression.
+
+## Step 12 — Limitations honestly recorded
+
+- In-page **copy-button clicks** were not exercised end-to-end. macOS System Events exposes only
+the native window buttons for a WKWebView, not the HTML buttons, and no Web Inspector automation
+was configured. Evidence for Fix B is therefore: the binding is generated (`App.d.ts`), the Go
+method compiles and vets clean, and all copy call sites now route through it. This is weaker than
+the ⌘C verification and is labeled as such.
+- `make lint` environment failure as above.
+- `docs/user-guide.md` updated to describe ⌘C and the native clipboard path, including the
+  previously undocumented "Copy article" button.

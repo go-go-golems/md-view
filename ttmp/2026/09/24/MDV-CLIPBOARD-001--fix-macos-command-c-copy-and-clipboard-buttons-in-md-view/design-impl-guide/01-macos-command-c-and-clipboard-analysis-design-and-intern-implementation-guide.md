@@ -829,9 +829,42 @@ Wails internals (verbatim captures under `sources/06-wails-source-excerpts/`):
 
 ## 15. Definition of done
 
-- [ ] macOS menu bar shows App + Edit menus; ⌘C/⌘V/⌘X/⌘A/⌘Z work on selected text.
-- [ ] Code-block copy, copy-path, and copy-article work on macOS via `App.CopyText`.
-- [ ] Linux/Windows menus and clipboard behavior unchanged.
-- [ ] `make test` and `make lint` pass.
-- [ ] `docs/user-guide.md` updated; diary entry recorded with evidence.
-- [ ] Guide uploaded to reMarkable at `/ai/2026/09/24/MDV-CLIPBOARD-001`.
+- [x] macOS menu bar shows App + Edit menus; ⌘C/⌘V/⌘X/⌘A/⌘Z work on selected text.
+- [x] Code-block copy, copy-path, and copy-article routed through `App.CopyText`.
+- [x] Linux/Windows menus and clipboard behavior unchanged (roles gated on darwin).
+- [x] `make test` passes; `gofmt`/`go vet` clean.
+- [ ] `make lint` — blocked by an environment toolchain mismatch (golangci-lint cannot decode
+      Go 1.27.1 export data; fails on untouched packages too).
+- [x] `docs/user-guide.md` updated; diary entry recorded with evidence.
+- [x] Guide uploaded to reMarkable at `/ai/2026/09/24/MDV-CLIPBOARD-001`.
+- [ ] Copy-button click verified on macOS at runtime (menu ⌘C was verified; button clicks were
+      not automated because WKWebView web content is not exposed to System Events accessibility).
+
+---
+
+## 16. Implementation status (2026-09-24)
+
+Both fixes are implemented and committed on `main`:
+
+| Commit | Contents |
+|--------|----------|
+| `5a4876b` | Ticket docs, guide, diary, sources |
+| `ab36db9` | Fix A: native App/Edit menus on darwin + structural test |
+| `d70229b` | Fix B: `App.CopyText` + `MDSCopyText` routing |
+
+Verified on macOS:
+
+- Menu bar reads `Apple, md-view, File, Edit, View` (queried via `System Events`).
+- With the clipboard seeded to a sentinel, `⌘A` then `⌘C` in the window replaced the
+  sentinel with 7108 bytes of rendered README text.
+- `make build` regenerated bindings; `CopyText` appears in `frontend/wailsjs/go/main/App.d.ts`.
+- `make test` passes; `gofmt -l` and `go vet -tags webkit2_41 .` are clean.
+
+Not verified / limitations:
+
+- In-page copy-button *clicks* were not driven end-to-end; WKWebView does not expose its web
+  buttons to macOS accessibility, and no inspector automation was set up. The Go binding and
+  the shared JS helper are present and build-verified.
+- `make lint` fails on this machine before reaching this change, due to a `golangci-lint`
+  binary built against an older Go that cannot read Go 1.27.1 export data.
+

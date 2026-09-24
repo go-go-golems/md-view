@@ -57,12 +57,22 @@ brief and the guide for the follow-up implementation work.
 
 ## Status
 
-Current status: **active** (analysis complete; implementation phases 0–3 are scoped in the
-guide and listed in `tasks.md`).
+Current status: **active** (both fixes implemented, committed, and macOS-verified; one
+environment limitation on `make lint`).
 
 - Bug A root cause: **verified**.
-- Bug B root cause: **strongly supported, not run-verified** — Phase 0 captures the
-  `isSecureContext` / `navigator.clipboard` check on a real macOS run.
+- Fix A: menu bar now `Apple, md-view, File, Edit, View`; ⌘C copied 7108 bytes of rendered
+  README text under an end-to-end test.
+- Bug B root cause: **strongly supported**; Fix B implemented (bound `App.CopyText` +
+  `MDSCopyText` route), build-verified. Copy-button *clicks* were not automated.
+
+Commits on `main`:
+
+| Commit | Contents |
+|--------|----------|
+| `5a4876b` | Ticket docs, guide, diary, sources |
+| `ab36db9` | Fix A: native App/Edit menus on darwin + structural test |
+| `d70229b` | Fix B: `App.CopyText` + `MDSCopyText` routing |
 
 ## Topics
 
