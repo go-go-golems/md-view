@@ -20,3 +20,7 @@ Uploaded the design/implementation guide + diary + sources index to reMarkable a
 ## 2026-09-24
 
 Implemented both fixes: (A) native App+Edit menu roles on darwin (commit ab36db9), (B) bound App.CopyText via runtime.ClipboardSetText and shared window.MDSCopyText routing (commit d70229b). Verified on macOS: menu bar shows File/Edit/View and Cmd-A+Cmd-C copies 7108 bytes of rendered text under a sentinel test. make test/gofmt/go vet clean; make lint blocked by an unrelated Go 1.27/golangci-lint export-data mismatch. Updated docs/user-guide.md and re-uploaded the guide.
+
+## 2026-09-24
+
+Re-uploaded the updated guide+diary+sources bundle to reMarkable: OK: uploaded MDV-CLIPBOARD-001 macOS Command-C and Clipboard Guide v2 implemented.pdf -> /ai/2026/09/24/MDV-CLIPBOARD-001
