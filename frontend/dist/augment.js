@@ -14,6 +14,39 @@
     var clipboardIcon = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3.5A1.5 1.5 0 014.5 2H11"/><path d="M5.5 5.5V3.5A1.5 1.5 0 017 2h5.5A1.5 1.5 0 0114 3.5v6A1.5 1.5 0 0112.5 11H11"/></svg>';
     var checkIcon = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 8.5 6.5 11.5 12.5 4.5"/></svg>';
 
+    // Copy text to the system clipboard. Prefers the native Go binding
+    // (App.CopyText -> runtime.ClipboardSetText), which works in WKWebView's
+    // non-secure wails:// context where navigator.clipboard is undefined.
+    // Falls back to the Web Clipboard API, then the legacy execCommand path.
+    // Returns a Promise so callers can show success/error feedback.
+    window.MDSCopyText = function (text) {
+        var App = window['go'] && window['go']['main'] && window['go']['main']['App'];
+        if (App && App.CopyText) {
+            return App.CopyText(text);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+        }
+        return new Promise(function (resolve, reject) {
+            var ta = document.createElement('textarea');
+            ta.value = text == null ? '' : String(text);
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.top = '-1000px';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                if (document.execCommand('copy')) { resolve(); }
+                else { reject(new Error('execCommand copy returned false')); }
+            } catch (e) {
+                reject(e);
+            } finally {
+                ta.remove();
+            }
+        });
+    };
+
     function currentTheme() {
         return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default';
     }
@@ -46,7 +79,7 @@
             (function (codeEl, btn) {
                 btn.addEventListener('click', function () {
                     var text = codeEl.textContent;
-                    navigator.clipboard.writeText(text).then(function () {
+                    window.MDSCopyText(text).then(function () {
                         btn.innerHTML = checkIcon;
                         btn.title = 'Copied!';
                         btn.classList.add('md-view-copy-btn-success');
@@ -55,6 +88,9 @@
                             btn.title = 'Copy to clipboard';
                             btn.classList.remove('md-view-copy-btn-success');
                         }, 2000);
+                    }).catch(function (e) {
+                        console.error('Copy failed:', e);
+                        btn.title = 'Copy failed';
                     });
                 });
             })(codeBlock, button);

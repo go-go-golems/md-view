@@ -306,9 +306,17 @@ The rendered window has a small toolbar of actions for the current file:
 
 - **Upload to reMarkable** — sends the current file to your reMarkable device/cloud via the `remarquee` CLI.
 - **Copy path** — copies the absolute path of the open file to the clipboard.
+- **Copy article** — copies the full Markdown source of the open file to the clipboard.
 - **Download** — opens a native save dialog and writes the markdown source to the location you choose.
 
 Code blocks also get a **copy-to-clipboard** button (revealed on hover).
+
+All copy actions, and standard selection copy (⌘C on macOS, Ctrl+C elsewhere), go through
+the native system clipboard. On macOS this is deliberate: the Wails WebView loads from the
+non-secure `wails://` scheme, where the browser `navigator.clipboard` API is unavailable, so
+md-view uses a bound Go method (`App.CopyText` → `runtime.ClipboardSetText`) instead. On
+macOS the menu bar also includes the standard **Edit** menu, which is what gives ⌘C/⌘V/⌘A
+their key equivalents on selected text.
 
 ---
 

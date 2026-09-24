@@ -286,6 +286,20 @@ func (a *App) GetTheme() string {
 	return a.theme
 }
 
+// CopyText writes text to the system clipboard using the native Wails
+// clipboard (NSPasteboard on macOS, the Win32 clipboard on Windows, GTK on
+// Linux). It exists because Wails serves the frontend from the custom
+// `wails://` scheme, which WKWebView does not treat as a secure context, so
+// `navigator.clipboard` is unavailable there. The frontend's MDSCopyText
+// helper prefers this method and falls back to the Web APIs only if the
+// binding is missing (for example in `wails dev` before a rebuild).
+func (a *App) CopyText(text string) error {
+	if a.ctx == nil {
+		return errors.New("clipboard unavailable: app not started")
+	}
+	return runtime.ClipboardSetText(a.ctx, text)
+}
+
 // UploadToRemarkable uploads the given markdown file to a reMarkable device via
 // the `remarquee upload md` CLI. Returns the remarquee stdout (the upload
 // result message). Mirrors pkg/server.handleUploadRemarkable (deleted in the
