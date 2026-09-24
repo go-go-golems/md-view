@@ -315,3 +315,28 @@ No new findings were introduced, so no source changes were needed. `make test` s
 
 The old workaround (`GOTOOLCHAIN=go1.26.6`) is no longer needed, but the toolchain note is kept
 above for the record.
+
+## Step 15 — Branch and pull request
+
+User request: "open PR, pushing to the manuel-tulip fork under a proper branch name".
+
+Remotes: `origin` = `git@github.com:go-go-golems/md-view.git` (upstream), `fork` =
+`git@github.com:manuel-tulip/md-view.git`. `gh` is authenticated as `manuel-tulip`.
+
+`origin/main` was `8b1cc35`; the seven work commits sat exactly on top of it, so branching from
+`main` was clean.
+
+```
+$ git switch -c fix/macos-command-c-clipboard
+$ git push -u fork fix/macos-command-c-clipboard
+ * [new branch]  fix/macos-command-c-clipboard -> fix/macos-command-c-clipboard
+$ gh pr create --repo go-go-golems/md-view --base main \
+    --head manuel-tulip:fix/macos-command-c-clipboard ...
+https://github.com/go-go-golems/md-view/pull/6
+```
+
+PR #6: **fix: restore macOS Command-C and in-page clipboard copy**
+(https://github.com/go-go-golems/md-view/pull/6), state OPEN, base `main`, head
+`manuel-tulip:fix/macos-command-c-clipboard`, 7 commits. The PR body documents both root causes,
+the changes, the verification (native menu + sentinel ⌘C test), and the limitations
+(unverified copy-button clicks; non-darwin untested at runtime).

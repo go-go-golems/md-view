@@ -28,3 +28,7 @@ Re-uploaded the updated guide+diary+sources bundle to reMarkable: OK: uploaded M
 ## 2026-09-24
 
 Bumped .golangci-lint-version v2.11.2 -> v2.14.0 to fix the Go 1.27 export-data incompatibility (x/tools v0.50.0 reads V4/V5). make lint now passes with 0 issues; CI uses the same version-file. Verified make test still passes.
+
+## 2026-09-24
+
+Opened PR #6 (fix: restore macOS Command-C and in-page clipboard copy), head manuel-tulip:fix/macos-command-c-clipboard -> base go-go-golems:main.

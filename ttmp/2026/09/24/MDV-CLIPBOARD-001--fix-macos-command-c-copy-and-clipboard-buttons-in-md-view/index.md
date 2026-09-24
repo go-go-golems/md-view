@@ -75,6 +75,13 @@ Commits on `main`:
 | `5a4876b` | Ticket docs, guide, diary, sources |
 | `ab36db9` | Fix A: native App/Edit menus on darwin + structural test |
 | `d70229b` | Fix B: `App.CopyText` + `MDSCopyText` routing |
+| `10f1a5e` | macOS validation recorded + `docs/user-guide.md` |
+| `b5f3fb4` | reMarkable v2 upload receipt |
+| `dae03db` | Pin down `make lint` toolchain incompatibility |
+| `ed80777` | Bump golangci-lint to v2.14.0 |
+
+Pull request: [go-go-golems/md-view#6](https://github.com/go-go-golems/md-view/pull/6)
+— head `manuel-tulip:fix/macos-command-c-clipboard`, base `main`.
 
 ## Topics
 
