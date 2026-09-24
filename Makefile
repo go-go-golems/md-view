@@ -52,6 +52,7 @@ wails-cli: .bin/wails
 
 .bin/wails:
 	@mkdir -p .bin .wails-cli
+	GOWORK=off go mod download github.com/wailsapp/wails/v2@$(WAILS_VERSION)
 	cp -R "$$(GOWORK=off go env GOMODCACHE)/github.com/wailsapp/wails/v2@$(WAILS_VERSION)" .wails-cli/wails
 	chmod -R u+w .wails-cli/wails
 	cd .wails-cli/wails && GOWORK=off go mod edit -replace=golang.org/x/tools=golang.org/x/tools@$(WAILS_XTOOLS_VERSION)
