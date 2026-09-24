@@ -244,3 +244,48 @@ the ⌘C verification and is labeled as such.
 - `make lint` environment failure as above.
 - `docs/user-guide.md` updated to describe ⌘C and the native clipboard path, including the
   previously undocumented "Copy article" button.
+
+## Step 13 — `make lint` failure: precise root cause and workaround
+
+Investigated the "export data version 4 is greater than maximum supported version 2" failure
+instead of leaving it as a vague environment note.
+
+Root cause: "unified IR" export-data format version skew between the Go toolchain and the
+`golang.org/x/tools` vendored into golangci-lint.
+
+- Homebrew Go **1.27.1** defines `V0…V4` in `internal/pkgbits/version.go` (`numVersions=5`),
+  so it emits/accepts export-data version **4**.
+- golangci-lint **v2.11.2** pins `golang.org/x/tools v0.42.0`, whose
+  `internal/pkgbits/version.go` stops at `V2` (`numVersions=3`). It therefore panics in
+  `internal/pkgbits/decoder.go` for any package whose export data says version 3 or 4 — the
+  Go 1.27.1 standard library, including `internal/goarch`, `fmt`, `sync`, `os`, `testing`.
+- The failure is toolchain-scoped, not code-scoped: it reproduces on untouched packages
+  (`pkg/watcher`) and there are **0 issues** in this repo's code.
+- `go.mod` already says `toolchain go1.26.3`, but `GOTOOLCHAIN=auto` only *upgrades*; because
+  the local 1.27.1 is newer than 1.26.3, the directive is ignored and 1.27.1 runs.
+
+Version map established from the module proxy and local caches:
+
+| golangci-lint | x/tools | max supported export version | reads Go 1.27? |
+|---------------|---------|------------------------------|----------------|
+| v2.11.2 (pinned) | v0.42.0 | V2 | no |
+| v2.12.0 | v0.44.0 | (V2/V3) | no/unknown |
+| v2.13.2 | v0.49.0 | V4 | yes |
+| v2.14.0 | v0.50.0 | V5 | yes |
+
+Workaround verified (no repo change): force the cached Go 1.26.6 toolchain, which emits V2
+export data that x/tools v0.42.0 can read:
+
+```
+$ GOTOOLCHAIN=go1.26.6 GOWORK=off .bin/golangci-lint run --timeout=5m . ./cmd/... ./pkg/...
+0 issues.
+EXIT=0
+```
+
+Two clean fixes, in preference order:
+
+1. Bump `.golangci-lint-version` to `v2.13.2` (pins x/tools v0.49.0; reads Go 1.27). Re-run
+   `make lint`; new linter versions may surface new findings to triage.
+2. Keep the pin and force the toolchain for lint, e.g. `GOTOOLCHAIN=go1.26.6 make lint` or
+   `GOTOOLCHAIN=go1.26.6` in the lint target. This mirrors the repo's existing Wails-CLI
+   x/tools workaround.
