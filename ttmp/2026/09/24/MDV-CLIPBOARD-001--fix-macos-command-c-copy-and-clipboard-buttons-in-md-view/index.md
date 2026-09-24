@@ -65,6 +65,8 @@ environment limitation on `make lint`).
   README text under an end-to-end test.
 - Bug B root cause: **strongly supported**; Fix B implemented (bound `App.CopyText` +
   `MDSCopyText` route), build-verified. Copy-button *clicks* were not automated.
+- Lint: `make lint` passes with golangci-lint **v2.14.0** (0 issues); the prior failure was a
+  v2.11.2/x-tools-vs-Go-1.27 export-data mismatch, fixed by the version bump.
 
 Commits on `main`:
 

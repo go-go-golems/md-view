@@ -24,3 +24,7 @@ Implemented both fixes: (A) native App+Edit menu roles on darwin (commit ab36db9
 ## 2026-09-24
 
 Re-uploaded the updated guide+diary+sources bundle to reMarkable: OK: uploaded MDV-CLIPBOARD-001 macOS Command-C and Clipboard Guide v2 implemented.pdf -> /ai/2026/09/24/MDV-CLIPBOARD-001
+
+## 2026-09-24
+
+Bumped .golangci-lint-version v2.11.2 -> v2.14.0 to fix the Go 1.27 export-data incompatibility (x/tools v0.50.0 reads V4/V5). make lint now passes with 0 issues; CI uses the same version-file. Verified make test still passes.

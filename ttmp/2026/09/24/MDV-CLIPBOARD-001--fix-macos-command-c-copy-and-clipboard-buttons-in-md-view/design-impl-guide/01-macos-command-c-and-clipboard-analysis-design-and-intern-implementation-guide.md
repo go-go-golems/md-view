@@ -833,8 +833,7 @@ Wails internals (verbatim captures under `sources/06-wails-source-excerpts/`):
 - [x] Code-block copy, copy-path, and copy-article routed through `App.CopyText`.
 - [x] Linux/Windows menus and clipboard behavior unchanged (roles gated on darwin).
 - [x] `make test` passes; `gofmt`/`go vet` clean.
-- [ ] `make lint` — blocked by an environment toolchain mismatch (golangci-lint cannot decode
-      Go 1.27.1 export data; fails on untouched packages too).
+- [x] `make lint` passes with golangci-lint v2.14.0 (0 issues).
 - [x] `docs/user-guide.md` updated; diary entry recorded with evidence.
 - [x] Guide uploaded to reMarkable at `/ai/2026/09/24/MDV-CLIPBOARD-001`.
 - [ ] Copy-button click verified on macOS at runtime (menu ⌘C was verified; button clicks were
@@ -865,6 +864,8 @@ Not verified / limitations:
 - In-page copy-button *clicks* were not driven end-to-end; WKWebView does not expose its web
   buttons to macOS accessibility, and no inspector automation was set up. The Go binding and
   the shared JS helper are present and build-verified.
-- `make lint` fails on this machine before reaching this change, due to a `golangci-lint`
-  binary built against an older Go that cannot read Go 1.27.1 export data.
+
+Resolved after the initial write-up: `make lint` was failing because golangci-lint v2.11.2
+pinned `x/tools v0.42.0` (unified-IR decoder max V2) while Go 1.27.1 emits V4. Bumped
+`.golangci-lint-version` to `v2.14.0` (x/tools v0.50.0); `make lint` now reports 0 issues.
 

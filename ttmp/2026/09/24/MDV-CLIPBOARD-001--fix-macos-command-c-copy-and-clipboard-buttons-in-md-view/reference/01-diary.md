@@ -289,3 +289,29 @@ Two clean fixes, in preference order:
 2. Keep the pin and force the toolchain for lint, e.g. `GOTOOLCHAIN=go1.26.6 make lint` or
    `GOTOOLCHAIN=go1.26.6` in the lint target. This mirrors the repo's existing Wails-CLI
    x/tools workaround.
+
+## Step 14 — Applied fix: bump golangci-lint to v2.14.0
+
+User request: "let's update golangci-lint".
+
+Changed `.golangci-lint-version` from `v2.11.2` to `v2.14.0` (pins `x/tools v0.50.0`, whose
+pkgbits decoder knows V5 and therefore reads Go 1.27's V4 export data). The version file is
+consumed by both the Makefile (`go install ...@$(GOLANGCI_LINT_VERSION)`) and CI
+(`.github/workflows/lint.yml` -> `golangci-lint-action@v9` `version-file: .golangci-lint-version`),
+so the bump propagates to both.
+
+Evidence:
+
+```
+$ make lint
+level=info msg="golangci-lint has version 2.14.0 built with go1.27.1 ..."
+[lintersdb] Active 9 linters: [errcheck exhaustive gofmt govet ineffassign nonamedreturns predeclared staticcheck unused]
+[linters] 0 issues.
+# exit 0
+```
+
+The old "export data version 4 ... maximum supported version 2" typecheck failure is gone.
+No new findings were introduced, so no source changes were needed. `make test` still passes.
+
+The old workaround (`GOTOOLCHAIN=go1.26.6`) is no longer needed, but the toolchain note is kept
+above for the record.
