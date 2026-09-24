@@ -93,3 +93,45 @@ reMarkable.
 - Bug B root cause: **strongly supported, not run-verified** — no macOS runtime check of
   `window.isSecureContext` / `typeof navigator.clipboard` was performed in this analysis-only pass.
   Phase 0 of the implementation plan captures that check as the first action.
+
+---
+
+# Implementation (2026-09-24, continued)
+
+## Step 8 — User request to implement, commit, and keep the diary
+
+> "commit it all, btw commit at appropriate intervals and keep a detailed diary as you work (using the diary format from the skill). Actually, before starting, how are you going to address a and B"
+
+Plan stated before coding:
+
+- **A:** `menu.go` — on `runtime.GOOS == "darwin"`, prepend `menu.AppMenu()` (first) and append
+  `menu.EditMenu()` after File, before View. No literal Edit submenu on Linux/Windows (a no-op
+  Ctrl+C item can swallow the WebView's native shortcut). Add a structural test.
+- **B:** `app.go` — bound `CopyText(text) error` → `runtime.ClipboardSetText(a.ctx, text)`;
+  `augment.js` — shared `window.MDSCopyText` (Go binding → `navigator.clipboard` →
+  `document.execCommand`); route `augment.js` and `buttons.js` call sites through it.
+- Commit intervals: docs, Fix A, Fix B, validation/docs.
+
+## Step 9 — Fix A: native App + Edit menus on darwin
+
+Changed `menu.go`:
+
+- Added stdlib `runtime` import.
+- Prepended `menu.AppMenu()` when `runtime.GOOS == "darwin"` (also restores About/Hide/Quit ⌘Q).
+- Appended `menu.EditMenu()` between the File and View submenus on darwin.
+
+Added `menu_test.go` (`TestBuildMenuIncludesDarwinRoles`) asserting the darwin menu contains
+`AppMenuRole` and `EditMenuRole` with the App role first, and that no role items exist off-darwin.
+
+Evidence:
+
+```
+$ GOWORK=off go test -tags webkit2_41 . -run 'TestBuildMenuIncludesDarwinRoles|TestParseViewArgs' -v
+--- PASS: TestParseViewArgs (0.00s)
+--- PASS: TestBuildMenuIncludesDarwinRoles (0.00s)
+PASS
+ok  github.com/go-go-golems/md-view  0.772s
+```
+
+Commit: `fix(MDV-CLIPBOARD-001): add native App and Edit menus on macOS`.
+Native ⌘C smoke test still pending; the structural test only proves the roles are present.

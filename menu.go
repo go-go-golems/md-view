@@ -1,6 +1,8 @@
 package main
 
 import (
+	"runtime"
+
 	"github.com/wailsapp/wails/v2/pkg/menu"
 	"github.com/wailsapp/wails/v2/pkg/menu/keys"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -12,6 +14,14 @@ import (
 // theme-changed / close-file). See the Wails article "Why both channels exist".
 func buildMenu(app *App) *menu.Menu {
 	appMenu := menu.NewMenu()
+
+	// macOS: the application menu (About/Hide/Quit) must be the first submenu.
+	// Roles are macOS-only: the Linux menu processor ignores items without a
+	// SubMenu, and the Windows processor would render an empty submenu for a
+	// role item — so gate strictly on darwin.
+	if runtime.GOOS == "darwin" {
+		appMenu.Append(menu.AppMenu())
+	}
 
 	// --- File menu ---
 	fileMenu := appMenu.AddSubmenu("File")
@@ -42,6 +52,19 @@ func buildMenu(app *App) *menu.Menu {
 			wailsruntime.EventsEmit(app.ctx, "close-file", nil)
 		}
 	})
+
+	// macOS: restore the native Edit menu. Wails rebuilds the whole main menu
+	// from only what we pass in options.App.Menu, so a custom menu silently
+	// removes the OS-provided Edit menu. macOS implements Cmd-C/Cmd-X/Cmd-V/
+	// Cmd-A/Cmd-Z by matching the key equivalent on these menu items and
+	// sending their standard selectors (copy:, cut:, paste:, selectAll:, …)
+	// through the responder chain to WKWebView. Without this menu, Cmd-C does
+	// nothing. The role's items have empty targets, so macOS handles them
+	// natively; see Wails issue #4918. Do NOT add this role on non-darwin:
+	// a no-op Ctrl+C item can swallow the shortcut the WebView handles itself.
+	if runtime.GOOS == "darwin" {
+		appMenu.Append(menu.EditMenu())
+	}
 
 	// --- View menu ---
 	viewMenu := appMenu.AddSubmenu("View")
