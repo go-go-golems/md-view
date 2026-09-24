@@ -135,3 +135,42 @@ ok  github.com/go-go-golems/md-view  0.772s
 
 Commit: `fix(MDV-CLIPBOARD-001): add native App and Edit menus on macOS`.
 Native ⌘C smoke test still pending; the structural test only proves the roles are present.
+
+## Step 10 — Fix B: native clipboard bridge for the JS copy buttons
+
+Changed `app.go`: added bound `CopyText(text string) error` calling
+`runtime.ClipboardSetText(a.ctx, text)`; guards a nil `ctx` with a clean error.
+
+Changed `frontend/dist/augment.js`: added a global `window.MDSCopyText(text)` that returns a
+Promise and tries, in order: (1) `window.go.main.App.CopyText` (native), (2) Web Clipboard
+API, (3) `document.execCommand('copy')` via a temporary textarea. The code-block copy button
+now calls `window.MDSCopyText(text)` and handles rejection (previously it called
+`navigator.clipboard` with no `.catch`, so it threw silently when the API was absent).
+
+Changed `frontend/dist/buttons.js`: copy-path and copy-article now call `window.MDSCopyText`.
+Copy-path gained an error toast it did not have before.
+
+Left `frontend/dist/copy-button.js` untouched: it is the legacy IIFE superseded by `augment.js`
+and is not referenced by `frontend/dist/index.html`.
+
+Regenerated bindings with `make build`; `frontend/wailsjs/` and `build/` are gitignored, so the
+committed diff is `app.go`, `augment.js`, `buttons.js`. `CopyText` is present in the generated
+`App.d.ts`/`App.js`.
+
+Evidence:
+
+```
+$ GOWORK=off go build -tags webkit2_41 .        # BUILD OK
+$ make test
+ok  github.com/go-go-golems/md-view            0.246s
+ok  github.com/go-go-golems/md-view/internal/launch  0.680s
+ok  github.com/go-go-golems/md-view/pkg/renderer      0.957s
+ok  github.com/go-go-golems/md-view/pkg/watcher       0.889s
+$ make build
+Built '.../build/bin/md-view.app/Contents/MacOS/md-view' in 3.695s.
+$ grep CopyText frontend/wailsjs/go/main/App.d.ts
+export function CopyText(arg1:string):Promise<void>;
+```
+
+Commit: `fix(MDV-CLIPBOARD-001): route copy buttons through native clipboard`.
+Runtime click verification on macOS still pending (next step).

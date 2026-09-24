@@ -63,11 +63,11 @@
         // --- Copy path (clip path) ---
         var copyBtn = el('md-view-copy-path-btn', 'Copy file path to clipboard', clipboardIcon);
         copyBtn.addEventListener('click', function () {
-            navigator.clipboard.writeText(filePath).then(function () {
+            window.MDSCopyText(filePath).then(function () {
                 copyBtn.innerHTML = checkIcon;
                 copyBtn.classList.add('md-view-toolbar-btn-success');
                 setTimeout(function () { copyBtn.innerHTML = clipboardIcon; copyBtn.classList.remove('md-view-toolbar-btn-success'); }, 2000);
-            });
+            }).catch(function (e) { toast('✗ Copy failed: ' + e, 5000, 'md-view-remarkable-toast-error'); });
         });
 
         // --- Copy entire article (markdown source) ---
@@ -87,7 +87,7 @@
                 } else {
                     text = String(data);
                 }
-                return navigator.clipboard.writeText(text);
+                return window.MDSCopyText(text);
             }).then(function () {
                 articleBtn.innerHTML = checkIcon;
                 articleBtn.classList.add('md-view-toolbar-btn-success');
