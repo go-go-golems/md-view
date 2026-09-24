@@ -1,0 +1,24 @@
+
+func (w *Window) Size() (int, int) {
+	var _result *C.char = C.GetSize(w.context)
+	temp := C.GoString(_result)
+	return parseIntDuo(temp)
+}
+
+func (w *Window) SetApplicationMenu(inMenu *menu.Menu) {
+	w.applicationMenu = inMenu
+	w.UpdateApplicationMenu()
+}
+
+func (w *Window) UpdateApplicationMenu() {
+	mainMenu := NewNSMenu(w.context, "")
+	if w.applicationMenu != nil {
+		processMenu(mainMenu, w.applicationMenu)
+	}
+	C.SetAsApplicationMenu(w.context, mainMenu.nsmenu)
+	C.UpdateApplicationMenu(w.context)
+}
+
+func (w Window) Print() {
+	C.WindowPrint(w.context)
+}

@@ -1,0 +1,65 @@
+
+	result.id = createMenuItemID(result)
+	result.nsmenuitem = C.AppendMenuItem(m.context, m.nsmenu, c.String(menuItem.Label), key, modifier, bool2Cint(menuItem.Disabled), bool2Cint(menuItem.Checked), C.int(result.id))
+	return result
+}
+
+//func (w *Window) SetApplicationMenu(menu *menu.Menu) {
+//w.applicationMenu = menu
+//processMenu(w, menu)
+//}
+
+func processMenu(parent *NSMenu, wailsMenu *menu.Menu) {
+	var radioGroups []*MenuItem
+
+	for _, menuItem := range wailsMenu.Items {
+		if menuItem.SubMenu != nil {
+			if len(radioGroups) > 0 {
+				processRadioGroups(radioGroups)
+				radioGroups = []*MenuItem{}
+			}
+			submenu := parent.AddSubMenu(menuItem.Label)
+			processMenu(submenu, menuItem.SubMenu)
+		} else {
+			lastMenuItem := processMenuItem(parent, menuItem)
+			if menuItem.Type == menu.RadioType {
+				radioGroups = append(radioGroups, lastMenuItem)
+			} else {
+				if len(radioGroups) > 0 {
+					processRadioGroups(radioGroups)
+					radioGroups = []*MenuItem{}
+				}
+			}
+		}
+	}
+}
+
+func processRadioGroups(groups []*MenuItem) {
+	for _, item := range groups {
+		item.radioGroupMembers = groups
+	}
+}
+
+func processMenuItem(parent *NSMenu, menuItem *menu.MenuItem) *MenuItem {
+	if menuItem.Hidden {
+		return nil
+	}
+	if menuItem.Role != 0 {
+		parent.AppendRole(menuItem.Role)
+		return nil
+	}
+	if menuItem.Type == menu.SeparatorType {
+		C.AppendSeparator(parent.nsmenu)
+		return nil
+	}
+
+	return parent.AddMenuItem(menuItem)
+}
+
+func (f *Frontend) MenuSetApplicationMenu(menu *menu.Menu) {
+	f.mainWindow.SetApplicationMenu(menu)
+}
+
+func (f *Frontend) MenuUpdateApplicationMenu() {
+	f.mainWindow.UpdateApplicationMenu()
+}

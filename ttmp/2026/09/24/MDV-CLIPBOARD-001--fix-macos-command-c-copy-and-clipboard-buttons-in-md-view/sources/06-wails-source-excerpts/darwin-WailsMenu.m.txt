@@ -1,0 +1,61 @@
+    NSMenuItem *childMenuItem = [[NSMenuItem new] autorelease];
+    [childMenuItem setTitle:child.title];
+    [self addItem:childMenuItem];
+    [childMenuItem setSubmenu:child];
+}
+
+- (void) appendRole :(WailsContext*)ctx :(Role)role {
+
+    switch(role) {
+        case AppMenu:
+        {
+            NSString *appName = [NSRunningApplication currentApplication].localizedName;
+            if( appName == nil ) {
+                appName = [[NSProcessInfo processInfo] processName];
+            }
+            WailsMenu *appMenu = [[[WailsMenu new] initWithNSTitle:appName] autorelease];
+            
+            if (ctx.aboutTitle != nil) {
+                [appMenu addItem:[self newMenuItemWithContext :ctx :[@"About " stringByAppendingString:appName] :@selector(About) :nil :0]];
+                [appMenu addItem:[NSMenuItem separatorItem]];
+            }
+
+            [appMenu addItem:[self newMenuItem:[@"Hide " stringByAppendingString:appName] :@selector(hide:) :@"h" :NSEventModifierFlagCommand]];
+            [appMenu addItem:[self newMenuItem:@"Hide Others" :@selector(hideOtherApplications:) :@"h" :(NSEventModifierFlagOption | NSEventModifierFlagCommand)]];
+            [appMenu addItem:[self newMenuItem:@"Show All" :@selector(unhideAllApplications:) :@""]];
+            [appMenu addItem:[NSMenuItem separatorItem]];
+
+            id quitTitle = [@"Quit " stringByAppendingString:appName];
+            NSMenuItem* quitMenuItem = [self newMenuItem:quitTitle :@selector(Quit) :@"q" :NSEventModifierFlagCommand];
+            quitMenuItem.target = ctx;
+            [appMenu addItem:quitMenuItem];
+            [self appendSubmenu:appMenu];
+            break;
+        }
+        case EditMenu:
+        {
+            WailsMenu *editMenu = [[[WailsMenu new] initWithNSTitle:@"Edit"] autorelease];
+            [editMenu addItem:[self newMenuItem:@"Undo" :@selector(undo:) :@"z" :NSEventModifierFlagCommand]];
+            [editMenu addItem:[self newMenuItem:@"Redo" :@selector(redo:) :@"z" :(NSEventModifierFlagShift | NSEventModifierFlagCommand)]];
+            [editMenu addItem:[NSMenuItem separatorItem]];
+            [editMenu addItem:[self newMenuItem:@"Cut" :@selector(cut:) :@"x" :NSEventModifierFlagCommand]];
+            [editMenu addItem:[self newMenuItem:@"Copy" :@selector(copy:) :@"c" :NSEventModifierFlagCommand]];
+            [editMenu addItem:[self newMenuItem:@"Paste" :@selector(paste:) :@"v" :NSEventModifierFlagCommand]];
+            [editMenu addItem:[self newMenuItem:@"Paste and Match Style" :@selector(pasteAsRichText:) :@"v" :(NSEventModifierFlagOption | NSEventModifierFlagShift | NSEventModifierFlagCommand)]];
+            [editMenu addItem:[self newMenuItem:@"Delete" :@selector(delete:) :[self accel:@"backspace"] :0]];
+            [editMenu addItem:[self newMenuItem:@"Select All" :@selector(selectAll:) :@"a" :NSEventModifierFlagCommand]];
+            [editMenu addItem:[NSMenuItem separatorItem]];
+//            NSMenuItem *speechMenuItem = [[NSMenuItem new] autorelease];
+//            [speechMenuItem setTitle:@"Speech"];
+//            [editMenu addItem:speechMenuItem];
+            WailsMenu *speechMenu =  [[[WailsMenu new] initWithNSTitle:@"Speech"] autorelease];
+            [speechMenu addItem:[self newMenuItem:@"Start Speaking" :@selector(startSpeaking:) :@""]];
+            [speechMenu addItem:[self newMenuItem:@"Stop Speaking" :@selector(stopSpeaking:) :@""]];
+            [editMenu appendSubmenu:speechMenu];
+            [self appendSubmenu:editMenu];
+            
+            break;
+        }
+        case WindowMenu:
+        {
+            WailsMenu *windowMenu = [[[WailsMenu new] initWithNSTitle:@"Window"] autorelease];
